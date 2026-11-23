@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Cascadian Synergetics</title>
+<meta name="description" content="Two patrols through a fog-bound Cascadian redwood grove, where the Office of Synergetics Services keeps space from growing square.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya+Sans:wght@400;500;700&family=Fraunces:ital,opsz,wght,SOFT,WONK@0,9..144,100..900,0..100,0..1;1,9..144,100..900,0..100,0..1&family=Special+Elite&display=swap">
+<style>
+/* Layout: one fogged clearing with two doors into the grove. No right angles: soft blobs and 120-degree chips. */
+:root{
+  --canopy:#1c3632; --mist:#cdd8cb; --bark:#86422e; --brass:#c69c48; --amber:#f6c068; --ink:#1b2823; --ink-soft:#43554c;
+  --font-display:"Fraunces","Iowan Old Style","Palatino Linotype",Georgia,serif;
+  --font-body:"Alegreya Sans","Gill Sans","Trebuchet MS",system-ui,sans-serif;
+  --font-type:"Special Elite","American Typewriter","Courier New",monospace;
+  --blob:30px 42px 34px 46px / 42px 32px 46px 30px;
+  color-scheme:light;
+}
+html,body{min-height:100%}
+body{margin:0;color:var(--ink);font-family:var(--font-body);font-size:17px;line-height:1.5;background:radial-gradient(120% 90% at 50% 0%,#f3efe0 0%,var(--mist) 46%,#a9bba6 100%) fixed,var(--mist);padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:calc(env(safe-area-inset-top,0px) + clamp(32px,8vh,88px)) calc(env(safe-area-inset-bottom,0px) + 48px)}
+main{max-width:920px;margin:0 auto;display:grid;gap:40px}
+.emblem{width:72px;height:72px}
+.eyebrow{font-family:var(--font-type);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft);margin:14px 0 6px}
+h1{margin:0;font-family:var(--font-display);font-variation-settings:"SOFT" 100,"WONK" 1;font-weight:520;font-size:clamp(42px,8vw,88px);line-height:.95;letter-spacing:-.01em;color:var(--canopy);text-wrap:balance}
+.lede{max-width:56ch;margin:18px 0 0;font-size:clamp(17px,2vw,20px)}
+.doors{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,300px),1fr));gap:22px}
+.door{border-radius:var(--blob);background:rgba(236,241,232,.72);border:1px solid rgba(255,255,255,.6);box-shadow:0 18px 44px rgba(27,40,35,.14);padding:26px 28px 28px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.door h2{margin:0;font-family:var(--font-display);font-variation-settings:"SOFT" 100,"WONK" 1;font-weight:560;font-size:30px;line-height:1.1}
+.door p{margin:0;color:var(--ink-soft)}
+.door .kind{font-family:var(--font-type);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--bark)}
+.hex{--h:48px;--cut:calc(var(--h) * .2887);position:relative;isolation:isolate;align-self:flex-start;height:var(--h);padding:0 calc(var(--cut) + 16px);display:inline-flex;align-items:center;font:600 16px/1 var(--font-body);color:#f4eedc;text-decoration:none;margin-top:6px}
+.hex::before{content:"";position:absolute;inset:0;z-index:-1;background:var(--canopy);clip-path:polygon(var(--cut) 0,calc(100% - var(--cut)) 0,100% 50%,calc(100% - var(--cut)) 100%,var(--cut) 100%,0 50%);transition:background .2s ease}
+.hex:hover::before{background:#284a44}
+.hex:focus-visible{outline:none;filter:drop-shadow(0 0 1.5px var(--ink)) drop-shadow(0 0 1px var(--ink))}
+.fine{font-size:15px;color:var(--ink-soft);max-width:70ch}
+.fine a{color:var(--bark)}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <svg class="emblem" viewBox="-50 -50 100 100" aria-hidden="true"><circle r="47" fill="#1c3632"/><circle r="40" fill="none" stroke="#c69c48" stroke-width="2.5"/><circle r="33" fill="none" stroke="#c69c48" stroke-width="1" stroke-dasharray="2 4"/><g stroke="#c69c48" stroke-width="5" stroke-linecap="round"><line x1="0" y1="0" x2="0" y2="-27"/><line x1="0" y1="0" x2="23.4" y2="13.5"/><line x1="0" y1="0" x2="-23.4" y2="13.5"/></g><circle r="7.5" fill="#f6c068"/></svg>
+    <p class="eyebrow">Office of Synergetics Services · Redwood District</p>
+    <h1>Cascadian Synergetics</h1>
+    <p class="lede">A fog-bound redwood grove at a dusk that does not end. Patrol Trine keeps it whole: three rangers, their lanterns, and a Vector Equilibrium at the heart of the Cathedral Ring that is waiting to breathe.</p>
+  </header>
+  <section class="doors" aria-label="Choose a patrol">
+    <article class="door">
+      <span class="kind">First person · 3D</span>
+      <h2>Cascadian Field Station</h2>
+      <p>Walk the grove at eye height among fluted redwoods, with a tetrahedral lantern in your hand. Stand still long enough and the lattice of space shows itself.</p>
+      <a class="hex" href="field-station/">Enter the field station</a>
+    </article>
+    <article class="door">
+      <span class="kind">Storybook · 2.5D</span>
+      <h2>Office of Synergetics Services</h2>
+      <p>The same beat as a painted diorama: misty trunks you pass in front of and behind, elk in the fog, a red sun over Lookout Rise.</p>
+      <a class="hex" href="storybook/">Begin the storybook patrol</a>
+    </article>
+  </section>
+  <p class="fine">Built around the Office of Synergetics Services pages in Math4Wisdom. Source, tests and notes: <a href="https://github.com/docxology/Cascadian_Synergetics">docxology/Cascadian_Synergetics</a>. MIT licensed.</p>
+</main>
+</body>
+</html>

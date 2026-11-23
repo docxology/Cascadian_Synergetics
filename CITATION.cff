@@ -1,0 +1,27 @@
+cff-version: 1.2.0
+message: "If you use or adapt this work, please cite it as below."
+title: "Cascadian Synergetics"
+type: software
+authors:
+  - family-names: Friedman
+    given-names: Daniel Ari
+repository-code: "https://github.com/docxology/Cascadian_Synergetics"
+license: MIT
+version: 0.1.0
+date-released: 2026-11-23
+abstract: >-
+  Two playable patrols through a fog-bound Cascadian redwood grove, built around
+  the Office of Synergetics Services gallery: a first-person Three.js field
+  station and a 2.5D storybook patrol. Synergetic geometry (the jitterbug,
+  quadray coordinates, the isotropic vector matrix, tensegrity) is shown in play
+  rather than explained.
+keywords:
+  - synergetics
+  - Buckminster Fuller
+  - quadray coordinates
+  - jitterbug
+  - isotropic vector matrix
+  - tensegrity
+  - Cascadia
+  - coast redwoods
+  - game
