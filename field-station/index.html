@@ -1992,7 +1992,8 @@ function update(dt){
   if (ivm.lines.material.opacity < 0.02){ const P = ivm.period; IVM.position.set(Math.round(pl.x / P) * P, Math.round((pl.y + 1.4) / P) * P, Math.round(pl.z / P) * P); }
   IVM.visible = ivm.lines.material.opacity > 0.01;
   if (ivmTarget > 0.5 && !S.ivmChimed){ S.ivmChimed = true; AU.shimmer(); } if (ivmTarget < 0.1) S.ivmChimed = false;
-  S.node = S.mode === 'play' ? gazeNode() : null; updTally(dt);
+  /* a node under the gaze yields to the work in reach (chief, cube, mast, slug), and outranks only the Ring's idle look */
+  S.node = S.mode === 'play' ? gazeNode() : null; if (S.node){ const nr = nearest(); if (nr && nr.kind !== 'ring') S.node = null; } updTally(dt);
   if (S.node && !S.spoke.mark){ S.spoke.mark = true; setTimeout(() => say(SITKA, 'Mark four.'), 700); }
   const big = IVM_BIG.userData, bigT = S.fin ? sstep(3, 7, S.fin.t) * (1 - sstep(13, 16.5, S.fin.t)) : 0;
   big.lines.material.opacity = bigT * 0.9; big.pts.material.opacity = bigT * (0.7 + 0.3 * Math.sin(t * 2)); IVM_BIG.visible = bigT > 0.01; IVM_BIG.rotation.y = t * 0.02;
