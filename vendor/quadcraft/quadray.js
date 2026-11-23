@@ -1,0 +1,282 @@
+/**
+ * Quadray.js - 4D Tetrahedral Coordinate System
+ * Ported from QuadCraft's Quadray.h for the 4D Chess game.
+ * 
+ * Quadray coordinates (a, b, c, d) represent positions in tetrahedral space
+ * using four basis vectors emanating from the center of a regular tetrahedron.
+ * Adding a common offset to all four components leaves the point unchanged.
+ * Cartesian units give each coefficient-unit basis vector length sqrt(3/2).
+ */
+
+const ROOT2 = 1.4142135623730951;
+const S3 = 1.0606601717798212; // sqrt(9/8) for volume conversions
+
+/**
+ * Quadray class for 4D tetrahedral coordinates.
+ */
+class Quadray {
+    /**
+     * @param {number} a - First component
+     * @param {number} b - Second component
+     * @param {number} c - Third component
+     * @param {number} d - Fourth component
+     */
+    constructor(a = 0, b = 0, c = 0, d = 0) {
+        this.a = a;
+        this.b = b;
+        this.c = c;
+        this.d = d;
+    }
+
+    /**
+     * Create a copy of this Quadray.
+     * @returns {Quadray}
+     */
+    clone() {
+        return new Quadray(this.a, this.b, this.c, this.d);
+    }
+
+    /**
+     * Zero-minimum normalization: subtract the minimum component from all.
+     * Ensures at least one component is zero.
+     * @returns {Quadray} A new normalized Quadray
+     */
+    normalized() {
+        const minVal = Math.min(this.a, this.b, this.c, this.d);
+        return new Quadray(
+            this.a - minVal,
+            this.b - minVal,
+            this.c - minVal,
+            this.d - minVal
+        );
+    }
+
+    /**
+     * Convert Quadray to Cartesian (3D) coordinates.
+     * @returns {{x: number, y: number, z: number}}
+     */
+    toCartesian() {
+        const scale = 1.0 / ROOT2;
+        return {
+            x: scale * ((this.a - this.b) - (this.c - this.d)),
+            y: scale * ((this.a - this.b) + (this.c - this.d)),
+            z: scale * ((this.a - this.c) + (this.b - this.d))
+        };
+    }
+
+    /**
+     * Create a Quadray from Cartesian coordinates.
+     * @param {number} x
+     * @param {number} y
+     * @param {number} z
+     * @returns {Quadray}
+     */
+    static fromCartesian(x, y, z) {
+        const scale = 1.0 / ROOT2;
+        const a = scale * (Math.max(0, x) + Math.max(0, y) + Math.max(0, z));
+        const b = scale * (Math.max(0, -x) + Math.max(0, -y) + Math.max(0, z));
+        const c = scale * (Math.max(0, -x) + Math.max(0, y) + Math.max(0, -z));
+        const d = scale * (Math.max(0, x) + Math.max(0, -y) + Math.max(0, -z));
+        return new Quadray(a, b, c, d).normalized();
+    }
+
+    /**
+     * Euclidean length in Cartesian units, invariant under a common offset.
+     * @returns {number}
+     */
+    length() {
+        const ab = this.a - this.b;
+        const cd = this.c - this.d;
+        return Math.hypot((ab - cd) / ROOT2, (ab + cd) / ROOT2,
+            ((this.a - this.c) + (this.b - this.d)) / ROOT2);
+    }
+
+    /**
+     * Add another Quadray to this one.
+     * @param {Quadray} other
+     * @returns {Quadray} A new normalized Quadray
+     */
+    add(other) {
+        return new Quadray(
+            this.a + other.a,
+            this.b + other.b,
+            this.c + other.c,
+            this.d + other.d
+        ).normalized();
+    }
+
+    /**
+     * Subtract another Quadray from this one.
+     * @param {Quadray} other
+     * @returns {Quadray} A new Quadray (not normalized, for distance calculations)
+     */
+    subtract(other) {
+        return new Quadray(
+            this.a - other.a,
+            this.b - other.b,
+            this.c - other.c,
+            this.d - other.d
+        );
+    }
+
+    /**
+     * Scale this Quadray by a scalar.
+     * @param {number} scalar
+     * @returns {Quadray}
+     */
+    scale(scalar) {
+        return new Quadray(
+            this.a * scalar,
+            this.b * scalar,
+            this.c * scalar,
+            this.d * scalar
+        );
+    }
+
+    /**
+     * Round zero-minimum components to integers using Math.round (ties up).
+     * This gauge-invariant component snap is not an XYZ-nearest FCC search.
+     * @param {{a: number, b: number, c: number, d: number}} q
+     * @returns {Quadray} Canonical integer representative
+     */
+    static toIVM(q) {
+        const minVal = Math.min(q.a, q.b, q.c, q.d);
+        return new Quadray(
+            Math.round(q.a - minVal),
+            Math.round(q.b - minVal),
+            Math.round(q.c - minVal),
+            Math.round(q.d - minVal)
+        ).normalized();
+    }
+
+    /**
+     * Calculate 4D volume of a cell in IVM space.
+     * @returns {number}
+     */
+    static cellVolume() {
+        // Per-cell IVM volume in tetravolumes = (1/√2)^3 × S3 ≈ 0.375, where
+        // S3 = sqrt(9/8) is the XYZ→IVM volume-conversion constant (see the
+        // `S3` constant above). Verified: Math.pow(1/Math.sqrt(2), 3) * S3
+        // === 0.375. (The previously-noted "S3^3 / sqrt(8)" derivation is
+        // WRONG — it evaluates to ≈0.421875, not 0.375.) This derivation is
+        // corroborated by `4d_doom/js/doom_config.js` (IVM.CELL_TETRAVOLUME)
+        // and `4d_minecraft/js/minecraft_analysis.js` (perBlockTetravolume),
+        // which both compute the same formula independently.
+        return 0.375;
+    }
+
+    /**
+     * Determine IVM cell type (tetra vs octa) based on coordinate parity.
+     * @param {number} a 
+     * @param {number} b 
+     * @param {number} c 
+     * @param {number} d 
+     * @returns {'tetra'|'octa'}
+     */
+    static cellType(a, b, c, d) {
+        const sum = Math.round(a) + Math.round(b) + Math.round(c) + Math.round(d);
+        return sum % 2 === 0 ? 'tetra' : 'octa';
+    }
+
+    /**
+     * Euclidean distance in Cartesian units; accepts structural records.
+     * @param {{a: number, b: number, c: number, d: number}} q1
+     * @param {{a: number, b: number, c: number, d: number}} q2
+     * @returns {number}
+     */
+    static distance(q1, q2) {
+        const ab = (q1.a - q1.b) - (q2.a - q2.b);
+        const cd = (q1.c - q1.d) - (q2.c - q2.d);
+        const ac = (q1.a - q1.c) - (q2.a - q2.c);
+        const bd = (q1.b - q1.d) - (q2.b - q2.d);
+        return Math.hypot((ab - cd) / ROOT2, (ab + cd) / ROOT2,
+            (ac + bd) / ROOT2);
+    }
+
+    /**
+     * Instance method for distance.
+     * @param {Quadray} other
+     * @returns {number}
+     */
+    distanceTo(other) {
+        return Quadray.distance(this, other);
+    }
+
+    /**
+     * Check equality (after normalization).
+     * @param {Quadray} other
+     * @param {number} epsilon - Tolerance for floating-point comparison
+     * @returns {boolean}
+     */
+    equals(other, epsilon = 0.0001) {
+        const n1 = this.normalized();
+        const n2 = other.normalized();
+        return (
+            Math.abs(n1.a - n2.a) < epsilon &&
+            Math.abs(n1.b - n2.b) < epsilon &&
+            Math.abs(n1.c - n2.c) < epsilon &&
+            Math.abs(n1.d - n2.d) < epsilon
+        );
+    }
+
+    /**
+     * String representation.
+     * @returns {string}
+     */
+    toString() {
+        return `Quadray(${this.a.toFixed(2)}, ${this.b.toFixed(2)}, ${this.c.toFixed(2)}, ${this.d.toFixed(2)})`;
+    }
+
+    /**
+     * Hash key for use in Maps/Sets (uses normalized integer coords).
+     * @returns {string}
+     */
+    toKey() {
+        const n = this.normalized();
+        return `${Math.round(n.a)},${Math.round(n.b)},${Math.round(n.c)},${Math.round(n.d)}`;
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Basis Vectors (Unit Steps in 4D)
+// These are the fundamental movement directions in Quadray Chess.
+// ═══════════════════════════════════════════════════════════════════════════
+
+/** Unit step in the +a direction */
+Quadray.A = new Quadray(1, 0, 0, 0);
+/** Unit step in the +b direction */
+Quadray.B = new Quadray(0, 1, 0, 0);
+/** Unit step in the +c direction */
+Quadray.C = new Quadray(0, 0, 1, 0);
+/** Unit step in the +d direction */
+Quadray.D = new Quadray(0, 0, 0, 1);
+
+/** All four basis directions */
+Quadray.BASIS = [Quadray.A, Quadray.B, Quadray.C, Quadray.D];
+
+/** Origin */
+Quadray.ORIGIN = new Quadray(0, 0, 0, 0);
+
+/**
+ * IVM_DIRECTIONS: the 8 signed unit-basis steps (±1 on exactly one of a/b/c/d).
+ * This is NOT the synergetics "twelve around one" closest-packing neighbor
+ * set (12 permutations of (0,1,1,2)) — that set lives at
+ * `GridUtils.DIRECTIONS` in grid_utils.js and is what every game's neighbor
+ * lookup / grid traversal actually uses. {±1,0,0,0} has exactly 8
+ * permutations, never 12, so there is no version of this constant that could
+ * hold 12 entries; nothing in this repo calls `Quadray.IVM_DIRECTIONS` for
+ * game logic (verified via grep across games/ on 2026-07-07) — the sole
+ * consumer is `4d_doom/tests/test_doom.js`, which pins its length to 8.
+ * Kept for that reason; prefer `GridUtils.DIRECTIONS` for any new code.
+ */
+Quadray.IVM_DIRECTIONS = [
+    new Quadray(1, 0, 0, 0), new Quadray(-1, 0, 0, 0),
+    new Quadray(0, 1, 0, 0), new Quadray(0, -1, 0, 0),
+    new Quadray(0, 0, 1, 0), new Quadray(0, 0, -1, 0),
+    new Quadray(0, 0, 0, 1), new Quadray(0, 0, 0, -1)
+];
+
+// Export for use in other modules
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { Quadray, ROOT2, S3 };
+}

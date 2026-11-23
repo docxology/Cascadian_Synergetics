@@ -13,6 +13,9 @@ The first versions explained themselves with a briefing, pop-ups that taught the
 - The action button names the action, not the idea.
 - The rangers talk about boots, coffee, elk and slugs. The radio carries deadpan bulletins.
 - The finale has no card: the view lifts into the canopy and settles back.
+- The lattice's numbers are instrument readings, not lessons. A node's address appears on the action button; four marks are counted out in clicks on a brass counter, and the rangers only remark that it came out whole. Nobody says why.
+- The station checks its instruments where you can see it: a row of beads on a brass rail by the door, one for each of QuadCraft's self-checks, lit green when it passes.
+- The Ring's dial has no scale words, only three dots and a moving arc.
 - Unfinished work pulls the lantern toward it; in the storybook it also glows at the screen's edge in its own colour.
 
 ## Palette and type
@@ -28,10 +31,14 @@ The Office of Synergetics Services gallery supplied scenes, not just objects:
 - ants converging under a rural post-office lamp
 - cuboctahedral ash over the station (storybook)
 - clay archivists and a file-eating tetrahedron (the storybook's mailbox, and a radio bulletin)
-- a red sun over interlocking peaks (storybook, Lookout Rise)
+- a red sun over interlocking peaks (storybook, Lookout Rise); in the field station, a mountain with a lenticular cloud that stands up out of the fog when you reach the top of Lookout Rise
 - moonlit tensegrity roots in a flooded forest (the ghost forest's mast)
 - the fire lookout, the pins, coins, patches and ferry token
 
+## Instruments
+
+The field station carries code from two sibling projects, QuadCraft and QuadMath, and uses it where a ranger would: to address a node, to count a tetrahedron, to read the Ring, to check the station's instruments. The code is spliced in, not rewritten, and [imports.md](imports.md) explains how the copies are kept identical to upstream.
+
 ## Not built yet
 
-In the field station: a vista from Lookout Rise above the fog (a mountain under a lenticular cloud, the red sun), ground tremors that make the masts sing, elk, murrelets, the station's ash and mailbox, and the diner on Highway 101.
+In the field station: the red sun at Lookout Rise, ground tremors that make the masts sing, elk, murrelets, the station's ash and mailbox, and the diner on Highway 101.

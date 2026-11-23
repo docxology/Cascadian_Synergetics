@@ -1,6 +1,6 @@
 {
   "name": "cascadian-synergetics",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "Two patrols through a fog-bound Cascadian redwood grove, where the Office of Synergetics Services keeps space from growing square.",
   "type": "module",
@@ -9,6 +9,9 @@
     "ci": "node tools/ci.mjs",
     "build": "node tools/build.mjs",
     "test": "node tests/check.mjs",
+    "vendor": "node tools/vendor.mjs",
+    "vendor:upstream": "node tools/vendor.mjs --upstream",
+    "fixtures": "python3 -I tools/quadmath_fixtures.py",
     "serve": "python3 -m http.server 8000"
   },
   "engines": {

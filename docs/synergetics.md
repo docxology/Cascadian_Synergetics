@@ -1,6 +1,6 @@
 # The geometry in the grove
 
-Everything below is drawn from the code and checked by `tests/check.mjs` or by the field station's in-browser hooks.
+Everything below is drawn from the code and checked by `tests/check.mjs` or by the field station's in-browser hooks. The coordinates and the counting come from QuadCraft and QuadMath; [imports.md](imports.md) says how.
 
 ## Tetravolumes and the cube
 
@@ -10,7 +10,7 @@ Fuller measured volume in regular tetrahedra. Take the tetrahedron whose edges a
 
 When an incursion resolves, the cube's edges fade, the inscribed tetrahedron (vertices at alternate corners, `TET_V`) stays, and the four corner pieces fly off. Their edges meet at right angles, so the right angles leave the grove with them.
 
-For reference, in the same units: octahedron 4, rhombic dodecahedron 6, vector equilibrium 20, and the icosahedron the jitterbug passes through, about 18.51.
+For reference, in the same units: octahedron 4, rhombic dodecahedron 6, vector equilibrium 20, and the icosahedron the jitterbug passes through, 5√2 φ² ≈ 18.51. The checks also count the cube with Tom Ace's 5×5 determinant on quadrays, and get the same 1 + 4 × ½.
 
 ## The jitterbug
 
@@ -24,6 +24,8 @@ The vector equilibrium (cuboctahedron) at the Cathedral Ring is built from eight
 
 Each triangle turns about its own octant axis as `a` shrinks, which is the jitterbug's twist. The Ring's breathing range grows with the patrol's progress; the square gaps glow cyan while it is stiff.
 
+Step inside the Ring and the compass rim turns into a dial that reads the jitterbug's volume as it breathes, with dots at the octahedron (4), the icosahedron (18.51) and the vector equilibrium (20). Between those stations it reads the struts' convex hull, which first swells a little past 20 before it falls; [imports.md](imports.md#the-rings-gauge) has the measurement.
+
 ## Quadray coordinates
 
 Four unit rays run from the centre of a regular tetrahedron to its corners. They sum to zero and every pair meets at the tetrahedral angle (cosine −1/3). Any point is a non-negative mix of them, written with one of the four values at zero.
@@ -34,9 +36,17 @@ The field station's compass shows your position relative to the Ring this way. W
 
 and the inverse is `P = Σ α_i q_i`. Subtracting a constant changes nothing, because the rays sum to zero. The compass draws three of the rays from above, with the fourth pointing up through its brass centre, and marks in scarlet whichever ray currently reads zero.
 
+The lattice uses QuadCraft's convention instead, whose rays point at alternate corners of a cube and are √(3/2) long. The two agree up to that factor and one fixed rotation, which the checks confirm.
+
 ## The isotropic vector matrix
 
 Stand still in the field station and a lattice appears around you: face-centred cubic points, each joined to its twelve nearest neighbours by equal edges. It fills space with tetrahedra and octahedra together, the octet truss. The lattice snaps to its own period, so it stays fixed in the world while you look around. `__fs.ivmCheck()` reports twelve edges at the centre node and a single edge length. The finale opens a larger copy through the whole Ring.
+
+Every node has an address: its quadray in QuadCraft's convention, with one lattice edge as two units and the foot of the Ring as 0 · 0 · 0 · 0. Face a node and the action button shows it. Neighbouring addresses differ by one of QuadMath's twelve moves, the permutations of (2, 1, 1, 0).
+
+## Counting in the lattice
+
+Mark four nodes and the tetrahedron between them lights up while a brass counter clicks once for each tetravolume, using QuadMath's exact 5×5 determinant on the four addresses. However the four are chosen, the count is a whole number, or 0 when they lie in one plane. Integer quadrays alone would not guarantee that; the lattice does. [imports.md](imports.md#why-every-count-is-whole) has the reason, and the notebook keeps the last two dozen counts.
 
 ## Tensegrity masts
 
@@ -44,4 +54,4 @@ Each mast is three stacked three-strut prisms. In every stage the top triangle i
 
 ## Geodesic domes
 
-The station and the lookout cab are frequency-two subdivisions of the icosahedron: every face split into four, the new vertices pushed out to the sphere.
+The station is a frequency-two subdivision of the icosahedron, every face split into four with the new vertices pushed out to the sphere, trimmed at its equator. The lookout's lamp cab is the plain icosahedron's twelve vertices and thirty struts.

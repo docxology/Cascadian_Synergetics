@@ -7,14 +7,15 @@ authors:
     given-names: Daniel Ari
 repository-code: "https://github.com/docxology/Cascadian_Synergetics"
 license: MIT
-version: 0.1.0
+version: 0.2.0
 date-released: 2026-11-23
 abstract: >-
   Two playable patrols through a fog-bound Cascadian redwood grove, built around
   the Office of Synergetics Services gallery: a first-person Three.js field
   station and a 2.5D storybook patrol. Synergetic geometry (the jitterbug,
   quadray coordinates, the isotropic vector matrix, tensegrity) is shown in play
-  rather than explained.
+  rather than explained. The field station runs QuadCraft's quadray code and a
+  tested port of QuadMath's exact tetravolume.
 keywords:
   - synergetics
   - Buckminster Fuller
@@ -25,3 +26,23 @@ keywords:
   - Cascadia
   - coast redwoods
   - game
+references:
+  - type: software
+    title: "QuadCraft"
+    authors:
+      - family-names: Friedman
+        given-names: Daniel Ari
+        orcid: "https://orcid.org/0000-0001-6232-9096"
+    repository-code: "https://github.com/docxology/QuadCraft"
+    license: Apache-2.0
+    commit: 6b5e65fc8cb746de0e827d13a8fcad41c8fd18d1
+  - type: software
+    title: "QuadMath"
+    authors:
+      - family-names: Friedman
+        given-names: Daniel Ari
+        orcid: "https://orcid.org/0000-0001-6232-9096"
+    repository-code: "https://github.com/docxology/QuadMath"
+    license: Apache-2.0
+    commit: 6e1f004e2a541bae374da973f7821d616cef66b1
+    doi: 10.5281/zenodo.16887791

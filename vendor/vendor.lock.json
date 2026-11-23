@@ -1,0 +1,30 @@
+{
+  "about": "Files copied byte-for-byte from upstream commits. Each blob is the upstream Git object id, so `git hash-object <file>` here must equal `git ls-tree <commit> <path>` there. Check with `node tools/vendor.mjs`; refresh only with `node tools/vendor.mjs --update`.",
+  "sources": [
+    {
+      "name": "quadcraft",
+      "repository": "https://github.com/docxology/QuadCraft",
+      "commit": "6b5e65fc8cb746de0e827d13a8fcad41c8fd18d1",
+      "license": "Apache-2.0",
+      "files": [
+        { "path": "games/4d_generic/quadray.js", "to": "vendor/quadcraft/quadray.js", "blob": "0b57506a79e79e8c5266c63d328308267980aea3" },
+        { "path": "games/4d_generic/synergetics.js", "to": "vendor/quadcraft/synergetics.js", "blob": "7b0b6a62e5833b82f92f7a2cdc71a64540f24baf" },
+        { "path": "LICENSE", "to": "vendor/quadcraft/LICENSE", "blob": "f49a4e16e68b128803cc2dcea614603632b04eac" },
+        { "path": "CITATION.cff", "to": "vendor/quadcraft/CITATION.cff", "blob": "9a7bc0eda2b28020e86553c30e3fe4e381f6cdfc" }
+      ]
+    },
+    {
+      "name": "quadmath",
+      "repository": "https://github.com/docxology/QuadMath",
+      "commit": "6e1f004e2a541bae374da973f7821d616cef66b1",
+      "license": "Apache-2.0",
+      "doi": "10.5281/zenodo.16887791",
+      "files": [
+        { "path": "src/quadmath/core/quadray.py", "to": "vendor/quadmath/quadray.py", "blob": "17445e18a7c457690224649ca99b5a979b3775e6" },
+        { "path": "src/quadmath/core/linalg_utils.py", "to": "vendor/quadmath/linalg_utils.py", "blob": "7fd4adac720cc4cd2bdfb64fa5f56f5fe9473903" },
+        { "path": "LICENSE", "to": "vendor/quadmath/LICENSE", "blob": "b09cd7856d58590578ee1a4f3ad45d1310a97f87" },
+        { "path": "CITATION.cff", "to": "vendor/quadmath/CITATION.cff", "blob": "4491ff28a10f1fc680eb8de48474a4403d450eff" }
+      ]
+    }
+  ]
+}

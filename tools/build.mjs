@@ -1,15 +1,19 @@
-// Builds standalone pages from the Claude artifact sources.
+// Builds the games from their sources.
 //
 // Each file in src/ is exactly what gets published as a Claude artifact: page
 // content without <!doctype>, <html>, <head> or <body>, because the artifact host
-// wraps it. This script adds that wrapper so the same game runs as an ordinary
-// web page, and points the cross-links between the two games at their local
-// copies instead of the hosted artifacts.
+// wraps it. A source may carry spliced blocks, verbatim copies of files from vendor/
+// and lib/ between marker comments, so the published artifact stays one file while
+// the imported code keeps a single home. This script
 //
-//   node tools/build.mjs           write storybook/index.html and field-station/index.html
-//   node tools/build.mjs --check   exit 1 if the committed pages differ from a fresh build
+//   1. rewrites each spliced block from its file (the blocks are never edited by hand), and
+//   2. writes the standalone pages: the same source wrapped in a document skeleton, with
+//      the cross-links between the two games pointed at their local copies.
+//
+//   node tools/build.mjs           refresh the spliced blocks and write the standalone pages
+//   node tools/build.mjs --check   exit 1 if any spliced block or standalone page is stale
 
-import { readFileSync, writeFileSync, mkdirSync, existsSync } from 'node:fs';
+import { readFileSync, writeFileSync, mkdirSync, existsSync, realpathSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -19,6 +23,26 @@ export const PAGES = [
   { src: 'src/storybook.html', out: 'storybook/index.html' },
   { src: 'src/field-station.html', out: 'field-station/index.html' },
 ];
+
+// Spliced blocks: which files each source carries, in order.
+export const SPLICES = {
+  'src/field-station.html': ['vendor/quadcraft/quadray.js', 'vendor/quadcraft/synergetics.js', 'lib/tetravolume.js'],
+};
+const SPLICE_RE = /\/\* ==== splice (\S+) ==== \*\/\n([\s\S]*?)\/\* ==== end splice \1 ==== \*\//g;
+
+const readFile = p => readFileSync(join(ROOT, p), 'utf8');
+
+/* Rewrite every spliced block in a source from its file. The files must end with a newline. */
+export function splice(source, read = readFile) {
+  return source.replace(SPLICE_RE, (_, path) => {
+    const body = read(path);
+    if (!body.endsWith('\n')) throw new Error(`${path} must end with a newline to be spliced`);
+    return `/* ==== splice ${path} ==== */\n${body}/* ==== end splice ${path} ==== */`;
+  });
+}
+
+/* The spliced paths a source actually carries, in order. */
+export function splicedPaths(source) { return [...source.matchAll(SPLICE_RE)].map(m => m[1]); }
 
 // Hosted artifact links inside the games, mapped to their copies in this repository.
 export const LINKS = {
@@ -50,8 +74,20 @@ export function standalone(source) {
 function main() {
   const check = process.argv.includes('--check');
   let stale = 0;
+  for (const [src, wanted] of Object.entries(SPLICES)) {
+    const current = readFile(src), have = splicedPaths(current);
+    if (have.join('\n') !== wanted.join('\n')) {
+      console.error(`${src}: carries spliced blocks [${have.join(', ')}], expected [${wanted.join(', ')}]`);
+      stale++;
+      continue;
+    }
+    const fresh = splice(current);
+    if (fresh === current) console.log(`fresh: spliced blocks in ${src}`);
+    else if (check) { console.error(`stale: a spliced block in ${src} differs from its file`); stale++; }
+    else { writeFileSync(join(ROOT, src), fresh); console.log(`spliced ${wanted.join(', ')} into ${src}`); }
+  }
   for (const { src, out } of PAGES) {
-    const built = standalone(readFileSync(join(ROOT, src), 'utf8'));
+    const built = standalone(readFile(src));
     const target = join(ROOT, out);
     if (check) {
       const current = existsSync(target) ? readFileSync(target, 'utf8') : '';
@@ -66,4 +102,7 @@ function main() {
   if (stale) { console.error('Run `node tools/build.mjs` and commit the result.'); process.exit(1); }
 }
 
-if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) main();
+// Run only when invoked directly. Compare real paths: a temporary folder reached through a
+// symlink (macOS /tmp, /var) would otherwise make this false and the script a silent no-op.
+const invokedDirectly = () => { try { return realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url)); } catch { return false; } };
+if (process.argv[1] && invokedDirectly()) main();
