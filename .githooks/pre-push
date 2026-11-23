@@ -1,0 +1,13 @@
+#!/bin/sh
+# Local CI before every push: each commit being pushed is checked on a clean export.
+# Enable once per clone:  git config core.hooksPath .githooks
+root=$(git rev-parse --show-toplevel) || exit 1
+zero=0000000000000000000000000000000000000000
+while read -r local_ref local_sha remote_ref remote_sha; do
+  [ "$local_sha" = "$zero" ] && continue
+  node "$root/tools/ci.mjs" --rev "$local_sha" || {
+    echo "pre-push: local CI failed for $local_sha; push stopped." >&2
+    exit 1
+  }
+done
+exit 0

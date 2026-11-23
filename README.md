@@ -56,12 +56,28 @@ field-station/       standalone field-station page, built from src/
 index.html           landing page with both doors
 tools/build.mjs      wraps each source in a full document and points cross-links at local copies
 tests/check.mjs      parse, artifact-contract, freshness and geometry checks
+tools/ci.mjs         local CI: the checks on a clean export of one commit, with an optional receipt
+.githooks/pre-push   runs local CI on every commit being pushed
 docs/                design, synergetics and Cascadia notes
 ```
 
-## Build and test
+## Local CI
 
-Node 20 or newer, no packages to install.
+There is no GitHub Actions workflow: nothing runs on GitHub and nothing is billed. The gate runs on your machine with Node 20 or newer and no packages to install.
+
+```bash
+node tools/ci.mjs
+```
+
+It exports the committed `HEAD` into a temporary folder, runs every check there, and prints a verdict bound to that commit and tree, so uncommitted edits can neither help nor hurt it. `--rev <sha>` checks another commit. `--receipt-dir <folder>` also writes the verdict to `<folder>/<commit>.json`; the folder must be outside the checkout.
+
+To run it automatically before every push:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+While editing, check the working tree directly and rebuild the standalone pages:
 
 ```bash
 node tests/check.mjs
@@ -71,7 +87,7 @@ node tests/check.mjs
 node tools/build.mjs
 ```
 
-The tests check that both inline scripts parse, that each source keeps the artifact rules (title near the top, no document skeleton, scripts only from cdnjs, no blocking dialogs), and that the standalone pages match a fresh build. They also check the geometry, using the exact functions the field station runs:
+The checks confirm that both inline scripts parse, that each source keeps the artifact rules (title near the top, no document skeleton, scripts only from cdnjs, no blocking dialogs), and that the standalone pages match a fresh build. They also check the geometry, using the exact functions the field station runs:
 
 - the four quadray rays are unit length, sum to zero, and meet at the tetrahedral angle
 - quadray coordinates come out non-negative with one zero, and convert back exactly
@@ -82,7 +98,7 @@ In a browser, both games expose a small test hook (`window.__oss` for the storyb
 
 ## Editing and republishing
 
-Edit `src/`, run `node tools/build.mjs`, then `node tests/check.mjs`. To update the hosted artifacts, publish `src/storybook.html` and `src/field-station.html` to their existing artifact links. See [AGENTS.md](AGENTS.md) for the rules the games keep.
+Edit `src/`, run `node tools/build.mjs`, commit, then `node tools/ci.mjs`. To update the hosted artifacts, publish `src/storybook.html` and `src/field-station.html` to their existing artifact links. See [AGENTS.md](AGENTS.md) for the rules the games keep.
 
 ## Sources and credits
 

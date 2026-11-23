@@ -11,6 +11,8 @@
 
 After any edit, run `node tools/build.mjs` and `node tests/check.mjs`, and commit `src/` together with the rebuilt `storybook/` and `field-station/`.
 
+CI is local only: `node tools/ci.mjs` checks a clean export of a commit, and `.githooks/pre-push` runs it before every push (`git config core.hooksPath .githooks`). Do not add a GitHub Actions workflow; nothing here should depend on hosted runners or billing.
+
 ## Rules the grove keeps
 
 - **No right angles.** Trunks lean and taper, the UI uses circles, soft blobs and 120-degree hex chips, and the viewport edge dissolves into mist. The only squares belong to the incursions, which are the thing being resolved.
