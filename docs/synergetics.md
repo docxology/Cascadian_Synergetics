@@ -10,7 +10,7 @@ Fuller measured volume in regular tetrahedra. Take the tetrahedron whose edges a
 
 When an incursion resolves, the cube's edges fade, the inscribed tetrahedron (vertices at alternate corners, `TET_V`) stays, and the four corner pieces fly off. Their edges meet at right angles, so the right angles leave the grove with them.
 
-For reference, in the same units: octahedron 4, rhombic dodecahedron 6, vector equilibrium 20, and the icosahedron the jitterbug passes through, 5√2 φ² ≈ 18.51. The checks also count the cube with Tom Ace's 5×5 determinant on quadrays, and get the same 1 + 4 × ½.
+For reference, in the same units: octahedron 4, rhombic dodecahedron 6, vector equilibrium 20, and the icosahedron the jitterbug passes through, 5√2 φ² ≈ <!-- n:icosa2 -->18.51<!-- /n -->. The checks also count the cube with Tom Ace's 5×5 determinant on quadrays, and get the same 1 + 4 × ½.
 
 ## The jitterbug
 
@@ -19,12 +19,12 @@ The vector equilibrium (cuboctahedron) at the Cathedral Ring is built from eight
 | a / b | Shape |
 |-------|-------|
 | 1 | vector equilibrium: radius equals edge, six square gaps |
-| 1/φ ≈ 0.618 | icosahedron: the square gaps close into pairs of triangles |
+| 1/φ ≈ <!-- n:invPhi -->0.618<!-- /n --> | icosahedron: the square gaps close into pairs of triangles |
 | 0 | octahedron: the twelve vertices meet in pairs |
 
 Each triangle turns about its own octant axis as `a` shrinks, which is the jitterbug's twist. The Ring's breathing range grows with the patrol's progress; the square gaps glow cyan while it is stiff.
 
-Step inside the Ring and the compass rim turns into a dial that reads the jitterbug's volume as it breathes, with dots at the octahedron (4), the icosahedron (18.51) and the vector equilibrium (20). Between those stations it reads the struts' convex hull, which first swells a little past 20 before it falls; [imports.md](imports.md#the-rings-gauge) has the measurement.
+Step inside the Ring and the compass rim turns into a dial that reads the jitterbug's volume as it breathes, with dots at the octahedron (4), the icosahedron (<!-- n:icosa2 -->18.51<!-- /n -->) and the vector equilibrium (20). Between those stations it reads the struts' convex hull, which first swells a little past 20 before it falls; [imports.md](imports.md#the-rings-gauge) has the measurement.
 
 ## Quadray coordinates
 

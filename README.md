@@ -2,6 +2,8 @@
 
 Two patrols through a fog-bound Cascadian redwood grove, where the Office of Synergetics Services keeps space from growing square.
 
+![From the top of Lookout Rise in the field station, a mountain stands up out of the fog under a lenticular cloud; a ranger's lantern glows in the foreground.](docs/images/field-station-lookout.jpg)
+
 | Game | Kind | Source | Standalone page |
 |------|------|--------|-----------------|
 | Cascadian Field Station | First person, 3D (Three.js r128) | [`src/field-station.html`](src/field-station.html) | [`field-station/`](field-station/) |
@@ -72,7 +74,8 @@ tools/quadmath_fixtures.py runs the vendored QuadMath to write tests/fixtures/qu
 tests/check.mjs            parse, artifact, freshness, import, port and geometry checks
 tools/ci.mjs               local CI: the checks on a clean export of one commit, with an optional receipt
 .githooks/pre-push         runs local CI on every commit being pushed
-docs/                      design, synergetics, imports and Cascadia notes
+tools/facts.mjs            computes the numbers the docs state and injects them; --check fails on a stale or typed one
+docs/                      design, synergetics, imports and Cascadia notes, and the images
 ```
 
 ## Local CI
@@ -104,7 +107,7 @@ node tools/build.mjs
 The checks confirm that both inline scripts parse, that each source keeps the artifact rules (title near the top, no document skeleton, scripts only from cdnjs, no blocking dialogs), and that the standalone pages and spliced blocks match a fresh build. For the imports they confirm that:
 
 - every vendored file has the Git blob id its lock names, and each spliced block is byte-identical to its file
-- the fixture was computed by the vendored QuadMath, and the JavaScript port reproduces all of it exactly: 245 tetravolumes, 60 determinants, the twelve neighbour moves
+- the fixture was computed by the vendored QuadMath, and the JavaScript port reproduces all of it exactly: <!-- n:fixtureCases -->245<!-- /n --> tetravolumes, <!-- n:fixtureDets -->60<!-- /n --> determinants, the twelve neighbour moves
 - QuadCraft's own eight self-checks pass, and the three quadray conventions in play (QuadCraft's, QuadMath's and the compass's) relate exactly as [docs/imports.md](docs/imports.md) says
 
 They also check the geometry, using the exact functions the field station runs, with the imported code as spliced:
@@ -113,7 +116,7 @@ They also check the geometry, using the exact functions the field station runs, 
 - quadray coordinates come out non-negative with one zero, and convert back exactly
 - the jitterbug's eight triangles stay equilateral, passing through the vector equilibrium, the icosahedron and the octahedron
 - the cube built on a tetrahedron's edges holds 3 tetravolumes: the tetrahedron plus four corner pieces of one half each, measured both in XYZ and with the 5×5 determinant
-- every node of the stillness lattice has a whole address, every strut is one of QuadMath's twelve moves, and 400 random four-node marks all count whole, each matching the tetrahedron's XYZ volume
+- every node of the stillness lattice has a whole address, every strut is one of QuadMath's twelve moves, and <!-- n:tallySamples -->400<!-- /n --> random four-node marks all count whole, each matching the tetrahedron's XYZ volume
 - the Ring's dial reads 20, 5√2 φ² and 4 at the three stations and the convex hull between them
 - each flake of ash is a vector equilibrium closing 20 tetravolumes
 
@@ -132,7 +135,9 @@ Edit `src/` (or `lib/`), run `node tools/build.mjs`, commit, then `node tools/ci
 - [QuadMath](https://github.com/docxology/QuadMath) (Apache-2.0, manuscript [doi:10.5281/zenodo.16887791](https://doi.org/10.5281/zenodo.16887791)): the exact tetravolume and Bareiss determinant, ported from `6e1f004`.
 - [Three.js](https://threejs.org/) r128 (MIT). Fonts: Fraunces, Alegreya Sans and Special Elite from Google Fonts.
 
-Notes on the geometry and on the real Cascadia behind the grove are in [docs/](docs/).
+Notes on the geometry and on the real Cascadia behind the grove are in [docs/](docs/). Releases are listed in [CHANGELOG.md](CHANGELOG.md).
+
+![In the storybook, the stillness lattice glows around Patrol Trine at the Cathedral Ring; four marked nodes span a tetrahedron and the brass counter reads 1.](docs/images/storybook-lattice.jpg)
 
 ## License
 

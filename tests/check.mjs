@@ -13,6 +13,7 @@ import { execFileSync } from 'node:child_process';
 import { createRequire } from 'node:module';
 import { checkLocal, readLock } from '../tools/vendor.mjs';
 import { SPLICES, splicedPaths } from '../tools/build.mjs';
+import { TALLY_SAMPLES } from '../tools/facts.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const read = p => readFileSync(join(ROOT, p), 'utf8');
@@ -41,6 +42,13 @@ for (const file of ['src/storybook.html', 'src/field-station.html']) {
    (and raises it on dense screens), and a canvas without a CSS size would shrink or overflow with it. */
 { const fsHtml = read('src/field-station.html'), rule = (fsHtml.match(/#view\{[^}]*\}/) || [''])[0];
   ok(/renderer\.setSize\([^)]*false\)/.test(fsHtml) && /width:100%/.test(rule) && /height:100%/.test(rule), 'src/field-station.html: the 3D canvas fills the frame at any pixel ratio (CSS width and height 100%)'); }
+
+/* Every number the docs state about the geometry and the imports is computed and injected, none typed */
+try {
+  const out = execFileSync(process.execPath, [join(ROOT, 'tools/facts.mjs'), '--check'], { stdio: 'pipe', encoding: 'utf8' });
+  ok(/^fresh: computed numbers in the docs \(\d+ facts\)$/m.test(out), `docs: every computed number is injected and current (${(out.match(/\((\d+) facts\)/) || [])[1]} facts)`);
+}
+catch (e) { ok(false, `docs: computed numbers are stale or typed:\n${(e.stdout || '') + (e.stderr || '')}`); }
 
 /* 2. Standalone pages are a fresh build of the sources */
 try {
@@ -175,7 +183,7 @@ ok(LAT.edges.every(([p, q]) => { const a = G.latticeAddress(...p, EDGE), b = G.l
 const degree = new Map(); for (const [p, q] of LAT.edges) for (const v of [p, q]) degree.set(v.join(), (degree.get(v.join()) || 0) + 1);
 ok(LAT.nodes.filter(p => Math.hypot(...p) < 11 - EDGE).every(p => degree.get(p.join()) === 12), 'lattice: every interior node has twelve neighbours');
 let wholeAll = true, matchAll = true, counted = 0; const unit = EDGE ** 3 / (6 * Math.SQRT2);
-for (let i = 0; i < 400; i++) {
+for (let i = 0; i < TALLY_SAMPLES; i++) {
   const pick4 = [0, 1, 2, 3].map(() => LAT.nodes[Math.floor(rnd() * LAT.nodes.length)]), q4 = pick4.map(p => G.latticeAddress(...p, EDGE));
   const [num, den] = G.aceTetravolumeExact(...q4); wholeAll &&= den === 1n; matchAll &&= near(Number(num) / Number(den), vol(...pick4) / unit, 1e-7); counted++;
 }
