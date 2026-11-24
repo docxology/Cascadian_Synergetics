@@ -77,8 +77,11 @@ tools/quadmath_fixtures.py runs the vendored QuadMath to write tests/fixtures/qu
 tests/check.mjs            parse, artifact, freshness, import, port and geometry checks
 tools/ci.mjs               local CI: the checks on a clean export of one commit, with an optional receipt
 .githooks/pre-push         runs local CI on every commit being pushed
-tools/facts.mjs            computes the numbers the docs state and injects them; --check fails on a stale or typed one
+tools/facts.mjs            computes every number the docs and the manuscript state; --check fails on a stale or typed one
 docs/                      design, synergetics, imports and Cascadia notes, and the images
+docs/manuscript/           the paper about the games, rendered through docxology/template
+scripts/                   the manuscript build: figures, tokens, render, render contract
+output/pdf/                the rendered paper and the digests binding it to its sources
 ```
 
 ## Local CI
@@ -124,6 +127,16 @@ They also check the geometry, using the exact functions the field station runs, 
 - each flake of ash is a vector equilibrium closing 20 tetravolumes
 
 In a browser, both games expose a small test hook (`window.__oss` for the storybook, `window.__fs` for the field station) with `step`, `teleport` and checks such as `__fs.ivmCheck()`, which confirms every interior lattice node has twelve equal edges, `__fs.lattice()` for the gazed node, the marks and the count, `__fs.ringVolume()`, `__fs.selfTest()`, `__fs.vista()`, `__fs.sundown()`, `__fs.quake()`, `__fs.elk()`, `__fs.murrelets(true)`, `__fs.mail()`, `__fs.car(true)`, `__fs.roadside()` and `await __fs.audioCheck(name, args, seconds, times)`, which renders one of the game's sounds offline and reports its loudness and strongest frequency at each given time.
+
+## The paper
+
+[`output/pdf/Cascadian_Synergetics_combined.pdf`](output/pdf/Cascadian_Synergetics_combined.pdf) is a paper about the games: what they show, the geometry behind it, how the imported code is held to its sources, the real Cascadia behind the grove, and how every claim is checked. Its source is [`docs/manuscript/`](docs/manuscript/), rendered by the [docxology/template](https://github.com/docxology/template) pipeline:
+
+```bash
+python3 scripts/build.py
+```
+
+That needs a template checkout beside this one with its project lane linked here, plus Node, TeX, Pandoc with pandoc-crossref and poppler; [`docs/manuscript/README.md`](docs/manuscript/README.md) has the setup. Every number in the paper is computed by `tools/facts.mjs` and injected as the paper renders, and the figures are drawn from the same code. Local CI does not render; it checks that the committed PDF was rendered from the current sources.
 
 ## Editing and republishing
 

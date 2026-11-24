@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- **A manuscript.** `docs/manuscript/` holds a paper about the games, their geometry and how it is checked, rendered to `output/pdf/Cascadian_Synergetics_combined.pdf` by the docxology/template pipeline with `python3 scripts/build.py`. Every number in it is a token computed by `tools/facts.mjs`; the figures are drawn from the same code (`scripts/make_figures.py`); the build reads the render contract back out of the PDF (`scripts/check_render.py`) and records the PDF's digest beside its sources' digest, which the local checks compare.
+- `tools/facts.mjs` gains `--tokens`, `--series` and `--stamp`, and `--check` now also rejects a typed number in the manuscript, an unknown token, an uncited or missing bibliography entry, a sourced fact used without its citation, a version that differs between `package.json`, `CITATION.cff` and the manuscript, and a PDF older than its sources.
 - From the field station's summit, with the sun at your back, the patrol's shadows on the fog below and a glory round your own.
 - The ants at Public Works build a tetrahedron from Fuller's 24 A-modules (both games); `aModules` joins the shared geometry and the checks confirm each module is exactly one twenty-fourth.
 - Foxfire on the fallen logs, and a rough-skinned newt that shows its orange underside (both games).

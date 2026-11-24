@@ -43,12 +43,17 @@ for (const file of ['src/storybook.html', 'src/field-station.html']) {
 { const fsHtml = read('src/field-station.html'), rule = (fsHtml.match(/#view\{[^}]*\}/) || [''])[0];
   ok(/renderer\.setSize\([^)]*false\)/.test(fsHtml) && /width:100%/.test(rule) && /height:100%/.test(rule), 'src/field-station.html: the 3D canvas fills the frame at any pixel ratio (CSS width and height 100%)'); }
 
-/* Every number the docs state about the geometry and the imports is computed and injected, none typed */
-try {
-  const out = execFileSync(process.execPath, [join(ROOT, 'tools/facts.mjs'), '--check'], { stdio: 'pipe', encoding: 'utf8' });
-  ok(/^fresh: computed numbers in the docs \(\d+ facts\)$/m.test(out), `docs: every computed number is injected and current (${(out.match(/\((\d+) facts\)/) || [])[1]} facts)`);
+/* Every number the docs and the manuscript state is computed and injected, none typed, and the tracked PDF
+   was rendered from the sources as they are now. Each line of the script's own report is required, so a
+   run that silently skipped a stage cannot pass. */
+{
+  let out = '', err = '';
+  try { out = execFileSync(process.execPath, [join(ROOT, 'tools/facts.mjs'), '--check'], { stdio: 'pipe', encoding: 'utf8' }); }
+  catch (e) { out = e.stdout || ''; err = e.stderr || String(e); }
+  ok(/^fresh: computed numbers in the docs \(\d+ facts\)$/m.test(out), `docs: every computed number is injected and current (${(out.match(/\((\d+) facts\)/) || [])[1] || 'stale or typed'} facts)${err && !/^fresh: computed/m.test(out) ? `\n${err}` : ''}`);
+  ok(/^fresh: the manuscript states numbers only as tokens \(\d+ tokens\)$/m.test(out), `manuscript: every number is a token, every token known, every citation in references.bib and every entry cited${/^fresh: the manuscript/m.test(out) ? '' : `\n${err}`}`);
+  ok(/^fresh: output\/pdf\/Cascadian_Synergetics_combined\.pdf was rendered from the current sources$/m.test(out), `manuscript: the tracked PDF matches its sources (python3 scripts/build.py re-renders)${/^fresh: output/m.test(out) ? '' : `\n${err}`}`);
 }
-catch (e) { ok(false, `docs: computed numbers are stale or typed:\n${(e.stdout || '') + (e.stderr || '')}`); }
 
 /* 2. Standalone pages are a fresh build of the sources */
 try {

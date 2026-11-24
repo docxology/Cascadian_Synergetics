@@ -3,3 +3,11 @@ node_modules/
 .claude/
 __pycache__/
 *.pyc
+
+# The manuscript build writes everything under output/; only the rendered PDF and
+# the record binding it to its sources are tracked.
+output/*
+!output/pdf/
+output/pdf/*
+!output/pdf/Cascadian_Synergetics_combined.pdf
+!output/pdf/Cascadian_Synergetics_combined.json

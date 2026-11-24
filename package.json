@@ -13,7 +13,8 @@
     "vendor:upstream": "node tools/vendor.mjs --upstream",
     "fixtures": "python3 -I tools/quadmath_fixtures.py",
     "facts": "node tools/facts.mjs",
-    "serve": "python3 -m http.server 8000"
+    "serve": "python3 -m http.server 8000",
+    "manuscript": "python3 scripts/build.py"
   },
   "engines": {
     "node": ">=20"

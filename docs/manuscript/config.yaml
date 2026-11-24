@@ -1,0 +1,72 @@
+# Manuscript configuration for Cascadian Synergetics.
+#
+# The docxology/template renderer loads this file with yaml.safe_load for the
+# title page and the publication metadata, and rejects any manuscript token
+# that survives here, so every value is literal. The version must equal
+# package.json and CITATION.cff; `node tools/facts.mjs --check` enforces that.
+
+paper:
+  title: "Cascadian Synergetics"
+  subtitle: "Synergetic Geometry, Shown and Checked, in Two Browser Games"
+  version: "0.3.0"
+  date: ""  # left empty: the renderer stamps the build date
+  cover:
+    image: "../../output/figures/fig_cover.png"
+    alt: "Struts of the isotropic vector matrix fade into a fog-blue ground around an icosahedron drawn in cyan and brass. The lattice and the icosahedron are the field station's own, computed by the game's geometry code."
+
+rendering:
+  section_breaks: true
+  include_date: true
+  cover_height_fraction: 0.55
+  figure_height_fraction: 0.46
+
+authors:
+  - name: "Daniel Ari Friedman"
+    orcid: "0000-0001-6232-9096"
+    corresponding: true
+
+publication:
+  release_status: "unreleased"
+  intended_version: "0.3.0"
+  github_repository: "docxology/Cascadian_Synergetics"
+  repository_url: "https://github.com/docxology/Cascadian_Synergetics"
+  journal: ""
+  volume: ""
+  pages: ""
+  year: "2026"
+  transmission_bookends:
+    enabled: false
+
+keywords:
+  - "synergetics"
+  - "Buckminster Fuller"
+  - "quadray coordinates"
+  - "isotropic vector matrix"
+  - "tetravolume"
+  - "jitterbug"
+  - "A quanta modules"
+  - "browser games"
+  - "Cascadia"
+  - "reproducible research"
+
+metadata:
+  license: "MIT"
+  language: "en"
+  tagged_pdf: true
+
+render:
+  formats:
+    pdf: true
+    html: false
+    slides: false
+    docx: false
+    epub: false
+
+llm:
+  reviews:
+    enabled: false
+  translations:
+    enabled: false
+
+steganography:
+  enabled: false

@@ -21,6 +21,13 @@ After any edit, run `node tools/build.mjs` and `node tests/check.mjs`, and commi
 
 CI is local only: `node tools/ci.mjs` checks a clean export of a commit, and `.githooks/pre-push` runs it before every push (`git config core.hooksPath .githooks`). Do not add a GitHub Actions workflow; nothing here should depend on hosted runners or billing.
 
+## The manuscript
+
+`docs/manuscript/` is a paper about this repository, rendered through docxology/template by `python3 scripts/build.py` (see `docs/manuscript/README.md`). Its rules are in `docs/manuscript/AGENTS.md`; the two that bite most often:
+
+- No number is typed in it. Every number is a `{{TOKEN}}` computed in `tools/facts.mjs` (`node tools/facts.mjs --tokens` lists them), and `node tools/facts.mjs --check` names the file and line of any typed one.
+- The tracked PDF and `output/pdf/Cascadian_Synergetics_combined.json` must come from the current sources. Changing the manuscript, the figure script, the screenshots in `docs/images/`, or any code a token or figure is computed from, means rendering again and committing the PDF with the change. Local CI cannot render (it has no TeX), so it compares digests instead and fails on a stale PDF.
+
 ## Rules the grove keeps
 
 - **No right angles.** Trunks lean and taper, the UI uses circles, soft blobs and 120-degree hex chips, and the viewport edge dissolves into mist. The only squares belong to the incursions, which are the thing being resolved.
