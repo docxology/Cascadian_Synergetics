@@ -2,8 +2,10 @@
 %
 % Every entry is cited in docs/manuscript/*.md, and every citation there has an
 % entry here (`node tools/facts.mjs --check`). Each DOI was resolved through
-% doi.org content negotiation on 2026-11-23 and the fields below were taken from
-% the record it returned. Keys are unique and lower-case.
+% doi.org content negotiation (on 2026-11-23, and on 2026-11-24 for the entries
+% added then) and the fields below were taken from the record it returned. An
+% entry without a DOI was taken from the page it cites, fetched on the access
+% date it gives, or from a library catalogue. Keys are unique and lower-case.
 
 % ---------------------------------------------------------------------------
 % Synergetics and the code this repository imports
@@ -111,4 +113,249 @@
   howpublished = {Gallery, \url{https://docs.superhuman.com/d/Math4Wisdom_d0SvdI3KSto/Office-of-Synergetics-Services_suFScEwl}},
   year         = {n.d.},
   note         = {Accessed 23 November 2026}
+}
+
+% ---------------------------------------------------------------------------
+% Synergetics, quadrays, lattices and the jitterbug
+% ---------------------------------------------------------------------------
+
+@book{edmondson1987,
+  author    = {Edmondson, Amy C.},
+  title     = {A {Fuller} Explanation},
+  publisher = {Birkh{\"a}user Boston},
+  address   = {Boston},
+  year      = {1987},
+  doi       = {10.1007/978-1-4684-7485-5}
+}
+
+@misc{urner1997,
+  author       = {Urner, Kirby},
+  title        = {An Introduction to Quadrays},
+  howpublished = {\url{http://www.grunch.net/synergetics/quadintro.html}},
+  year         = {1997},
+  note         = {First posted 7 October 1997, last updated 25 March 2000; accessed 24 November 2026}
+}
+
+@misc{acequadray,
+  author       = {Ace, Tom},
+  title        = {Quadray Formulas},
+  howpublished = {\url{http://www.minortriad.com/quadray.html}},
+  year         = {n.d.},
+  note         = {Accessed 24 November 2026}
+}
+
+@book{conway1999,
+  author    = {Conway, J. H. and Sloane, N. J. A.},
+  title     = {Sphere Packings, Lattices and Groups},
+  series    = {Grundlehren der mathematischen Wissenschaften},
+  publisher = {Springer New York},
+  address   = {New York},
+  year      = {1999},
+  doi       = {10.1007/978-1-4757-6568-7}
+}
+
+@article{hales2005,
+  author  = {Hales, Thomas},
+  title   = {A proof of the {Kepler} conjecture},
+  journal = {Annals of Mathematics},
+  volume  = {162},
+  number  = {3},
+  pages   = {1065--1185},
+  year    = {2005},
+  doi     = {10.4007/annals.2005.162.1065}
+}
+
+@article{verheyen1989,
+  author  = {Verheyen, H. F.},
+  title   = {The complete set of {Jitterbug} transformers and the analysis of their motion},
+  journal = {Computers \& Mathematics with Applications},
+  volume  = {17},
+  number  = {1--3},
+  pages   = {203--250},
+  year    = {1989},
+  doi     = {10.1016/0898-1221(89)90160-0}
+}
+
+% Crossref's record lists the authors in reverse; Open Library and Google Books,
+% like the title page, give Skelton first.
+@book{skelton2009,
+  author    = {Skelton, Robert E. and de Oliveira, Mauricio C.},
+  title     = {Tensegrity Systems},
+  publisher = {Springer US},
+  address   = {Boston},
+  year      = {2009},
+  doi       = {10.1007/978-0-387-74242-7}
+}
+
+% ---------------------------------------------------------------------------
+% Play, games and learning
+% ---------------------------------------------------------------------------
+
+@book{papert1980,
+  author    = {Papert, Seymour},
+  title     = {Mindstorms: Children, Computers, and Powerful Ideas},
+  publisher = {Basic Books},
+  address   = {New York},
+  year      = {1980}
+}
+
+@article{gee2003,
+  author  = {Gee, James Paul},
+  title   = {What video games have to teach us about learning and literacy},
+  journal = {Computers in Entertainment},
+  volume  = {1},
+  number  = {1},
+  pages   = {20},
+  year    = {2003},
+  doi     = {10.1145/950566.950595}
+}
+
+@book{devlin2011,
+  author    = {Devlin, Keith},
+  title     = {Mathematics Education for a New Era: Video Games as a Medium for Learning},
+  publisher = {A K Peters/CRC Press},
+  year      = {2011},
+  doi       = {10.1201/b10816}
+}
+
+@misc{victor2011,
+  author       = {Victor, Bret},
+  title        = {Explorable Explanations},
+  howpublished = {\url{https://worrydream.com/ExplorableExplanations/}},
+  year         = {2011},
+  note         = {Dated 10 March 2011; accessed 24 November 2026}
+}
+
+% ---------------------------------------------------------------------------
+% Reproducible research and the tools behind this paper
+% ---------------------------------------------------------------------------
+
+@article{knuth1984,
+  author  = {Knuth, D. E.},
+  title   = {Literate Programming},
+  journal = {The Computer Journal},
+  volume  = {27},
+  number  = {2},
+  pages   = {97--111},
+  year    = {1984},
+  doi     = {10.1093/comjnl/27.2.97}
+}
+
+@inproceedings{claerbout1992,
+  author    = {Claerbout, Jon F. and Karrenbach, Martin},
+  title     = {Electronic documents give reproducible research a new meaning},
+  booktitle = {International Meeting for Applied Geoscience \& Energy},
+  publisher = {Society of Exploration Geophysicists},
+  pages     = {601--604},
+  year      = {1992},
+  doi       = {10.1190/1.1822162}
+}
+
+@article{peng2011,
+  author  = {Peng, Roger D.},
+  title   = {Reproducible Research in Computational Science},
+  journal = {Science},
+  volume  = {334},
+  number  = {6060},
+  pages   = {1226--1227},
+  year    = {2011},
+  doi     = {10.1126/science.1213847}
+}
+
+@article{sandve2013,
+  author  = {Sandve, Geir Kjetil and Nekrutenko, Anton and Taylor, James and Hovig, Eivind},
+  title   = {Ten Simple Rules for Reproducible Computational Research},
+  journal = {PLoS Computational Biology},
+  volume  = {9},
+  number  = {10},
+  pages   = {e1003285},
+  year    = {2013},
+  doi     = {10.1371/journal.pcbi.1003285}
+}
+
+@article{smith2016,
+  author  = {Smith, Arfon M. and Katz, Daniel S. and Niemeyer, Kyle E. and {FORCE11 Software Citation Working Group}},
+  title   = {Software citation principles},
+  journal = {PeerJ Computer Science},
+  volume  = {2},
+  pages   = {e86},
+  year    = {2016},
+  doi     = {10.7717/peerj-cs.86}
+}
+
+@book{chacon2014,
+  author    = {Chacon, Scott and Straub, Ben},
+  title     = {Pro {Git}},
+  publisher = {Apress},
+  address   = {Berkeley, CA},
+  year      = {2014},
+  doi       = {10.1007/978-1-4842-0076-6}
+}
+
+@misc{template2026,
+  author       = {Friedman, Daniel Ari},
+  title        = {A template/ approach to Reproducible Generative Research: Architecture and Ergonomics from Configuration through Publication},
+  howpublished = {Zenodo},
+  year         = {2026},
+  doi          = {10.5281/zenodo.19139090},
+  url          = {https://doi.org/10.5281/zenodo.19139090},
+  note         = {Software and manuscript, v1; the render here used the template at its version 5.2.0}
+}
+
+% ---------------------------------------------------------------------------
+% More of the real Cascadia
+% ---------------------------------------------------------------------------
+
+@techreport{goldfinger2012,
+  author      = {Goldfinger, Chris and Nelson, C. Hans and Morey, Ann E. and Johnson, Joel E. and Patton, Jason R. and Karabanov, Eugene B. and Gutierrez-Pastor, Julia and Eriksson, Andrew T. and Gracia, Eulalia and Dunhill, Gita and Enkin, Randolph J. and Dallimore, Audrey and Vallier, Tracy},
+  title       = {Turbidite event history: Methods and implications for {Holocene} paleoseismicity of the {Cascadia} subduction zone},
+  institution = {US Geological Survey},
+  type        = {Professional Paper},
+  number      = {1661-F},
+  year        = {2012},
+  doi         = {10.3133/pp1661F}
+}
+
+@article{burgess2004,
+  author  = {Burgess, S. S. O. and Dawson, T. E.},
+  title   = {The contribution of fog to the water relations of \emph{{Sequoia sempervirens}} ({D. Don}): foliar uptake and prevention of dehydration},
+  journal = {Plant, Cell \& Environment},
+  volume  = {27},
+  number  = {8},
+  pages   = {1023--1034},
+  year    = {2004},
+  doi     = {10.1111/j.1365-3040.2004.01207.x}
+}
+
+@article{laven2005,
+  author  = {Laven, Philip},
+  title   = {How are glories formed?},
+  journal = {Applied Optics},
+  volume  = {44},
+  number  = {27},
+  pages   = {5675},
+  year    = {2005},
+  doi     = {10.1364/AO.44.005675}
+}
+
+@article{oliveira2015,
+  author  = {Oliveira, Anderson G. and Stevani, Cassius V. and Waldenmaier, Hans E. and Viviani, Vadim and Emerson, Jillian M. and Loros, Jennifer J. and Dunlap, Jay C.},
+  title   = {Circadian Control Sheds Light on Fungal Bioluminescence},
+  journal = {Current Biology},
+  volume  = {25},
+  number  = {7},
+  pages   = {964--968},
+  year    = {2015},
+  doi     = {10.1016/j.cub.2015.02.021}
+}
+
+@article{brodie2002,
+  author  = {Brodie, Edmund D. and Ridenhour, B. J. and Brodie, E. D.},
+  title   = {The evolutionary response of predators to dangerous prey: hotspots and coldspots in the geographic mosaic of coevolution between garter snakes and newts},
+  journal = {Evolution},
+  volume  = {56},
+  number  = {10},
+  pages   = {2067--2082},
+  year    = {2002},
+  doi     = {10.1111/j.0014-3820.2002.tb00132.x}
 }

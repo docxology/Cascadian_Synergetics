@@ -8,13 +8,14 @@ insignia from the gallery found on the forest floor. At the centre of the grove
 stands the Cathedral Ring, where a vector equilibrium floats with its square
 gaps glitching; each finished task lets it breathe further through its
 jitterbug, and when the grove is whole it breathes all the way and the view
-lifts into the canopy.
+lifts into the canopy. Both games run in a browser from the repository's own
+site ([@sec:availability]).
 
 The grove keeps one visible rule: nothing grows square. Trunks taper and lean,
 the interface is circles and soft blobs, and the edge of the screen dissolves
 into mist. The incursions are the only squares in the world, and resolving one
-shows the cube becoming the tetrahedron on its face diagonals while its corner
-pieces flutter away (see [@sec:cube]).
+shows the cube giving way to the tetrahedron on its face diagonals while its
+corner pieces flutter off ([@prop:cube]).
 
 ## The field station {#sec:field-station}
 
@@ -29,7 +30,7 @@ cloud ([@fig:field-station]). A brass rail by the station door carries one bead
 for each of QuadCraft's {{QUADCRAFT_CHECKS}} geometric self-checks
 [@quadcraft], lit when the check passes as the station loads.
 
-![From the top of Lookout Rise in the field station, a mountain stands up out of the fog under a lenticular cloud; a ranger's lantern glows in the foreground. Screenshot of the game.](../../output/figures/fig_field_station.jpg){#fig:field-station width=78%}
+![The field station from the top of Lookout Rise: a mountain stands up out of the fog under a lenticular cloud, and a ranger's lantern glows in the foreground. A screenshot of the game running in a browser.](../../output/figures/fig_field_station.jpg){#fig:field-station width=78%}
 
 ## The storybook {#sec:storybook}
 
@@ -40,18 +41,16 @@ exactly {{SB_PERIODS}} lattice periods close around the loop, and the
 addresses never break where it joins. In the storybook a player taps a node to
 mark it ([@fig:storybook]).
 
-![In the storybook, the stillness lattice glows around Patrol Trine at the Cathedral Ring. Four marked nodes span a tetrahedron, and the brass counter reads one. Screenshot of the game.](../../output/figures/fig_storybook.jpg){#fig:storybook width=72%}
+![The storybook at the Cathedral Ring. The stillness lattice glows around Patrol Trine, four marked nodes span a tetrahedron, and the brass counter reads the tetravolume of [@prop:ace]. The lattice's strut, {{SB_EDGE}} m, closes {{SB_PERIODS}} periods around the {{SB_LOOP}} m loop. A screenshot of the game.](../../output/figures/fig_storybook.jpg){#fig:storybook width=72%}
 
-## What both games share
+## What both games share {#sec:shared}
 
 Stand still for a few seconds and the isotropic vector matrix appears around
 the ranger, fixed to the world rather than to the view. Every node carries a
-whole quadray address counted out from the foot of the Ring, and the action
-button shows the address of the node the player would mark. Mark four nodes and
-the tetrahedron between them lights while the counter clicks once for each
-tetravolume. The notebook keeps the counts. At the Ring a brass dial follows the
-jitterbug's volume, with dots at its named stations and no scale words.
-
-Each game is a single HTML page with one inline script. Both pages carry the
-same geometry, spliced in from shared files ([@sec:imports]), and both expose a
-small test hook in the browser for checking what the page shows.
+whole quadray address counted out from the foot of the Ring
+([@prop:addresses]), and the action button shows the address of the node the
+player would mark. Mark four nodes and the tetrahedron between them lights
+while the counter clicks once for each tetravolume, or stays silent when the
+four lie in one plane. The notebook keeps the counts. At the Ring a brass dial
+follows the jitterbug's volume, with dots at its named stations and no scale
+words.

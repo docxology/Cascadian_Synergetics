@@ -31,6 +31,16 @@ These hold for every file in `docs/manuscript/` that the template renders.
   When the version is bumped for the next release, set `release_status` to
   `unreleased` and drop `doi` from `CITATION.cff` until that release has its
   own record.
+- **Formal statements are numbered blocks.** Write a definition or proposition
+  as a fenced block, `::: {.definition #def:name title="…"}` … `:::`, which the
+  template's formalism filter numbers; refer to it as `[@def:name]`. Label it
+  with a prefix the template's pre-render validator accepts (`def`, `prop`,
+  `thm` and the like, listed in `tools/facts.mjs`), whatever its kind, or the
+  validator takes the reference for a missing citation.
+- **Every display equation is numbered.** Follow each `$$ … $$` with an
+  `{#eq:name}` label, and refer to it as `[@eq:name]`. Never open a sentence
+  with a reference to a section, figure, table or equation, which pandoc-crossref
+  writes in lower case.
 - **The paper describes a release.** The Discussion names release
   `{{VERSION}}`. Describe only what that release contains; to write about work
   the changelog still lists as unreleased, say so in that sentence.

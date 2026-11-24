@@ -187,6 +187,16 @@ ok(LAT.edges.every(([p, q]) => { const a = G.latticeAddress(...p, EDGE), b = G.l
   `lattice: all ${LAT.edges.length} struts are ${EDGE} m and step between addresses by one of QuadMath’s twelve moves`);
 const degree = new Map(); for (const [p, q] of LAT.edges) for (const v of [p, q]) degree.set(v.join(), (degree.get(v.join()) || 0) + 1);
 ok(LAT.nodes.filter(p => Math.hypot(...p) < 11 - EDGE).every(p => degree.get(p.join()) === 12), 'lattice: every interior node has twelve neighbours');
+/* Why every count is whole (the manuscript's whole-counts proposition): projected by (a, b, c, d) -> (a - d, b - d, c - d),
+   the twelve moves generate exactly the lattice whose basis is B, and det B is the divisor in the 5x5 formula. */
+{
+  const B = [[1, -1, 0], [1, 0, -1], [2, 1, 1]], d = det3(...B), proj = m => [m[0] - m[3], m[1] - m[3], m[2] - m[3]];
+  const moves = G.IVM_NEIGHBOR_MOVES.map(proj), key = v => v.join();
+  const coeffs = v => [0, 1, 2].map(i => det3(...B.map((r, j) => (j === i ? v : r))) / d);
+  const basisAreMoves = B.every(b => moves.some(m => key(m) === key(b))), movesInB = moves.every(m => coeffs(m).every(Number.isInteger));
+  ok(d === 4 && basisAreMoves && movesInB,
+    `whole counts: projected by (a-d, b-d, c-d) the twelve moves generate exactly the lattice of (1,-1,0), (1,0,-1), (2,1,1), whose determinant ${d} is the 5x5 formula's divisor`);
+}
 let wholeAll = true, matchAll = true, counted = 0; const unit = EDGE ** 3 / (6 * Math.SQRT2);
 for (let i = 0; i < TALLY_SAMPLES; i++) {
   const pick4 = [0, 1, 2, 3].map(() => LAT.nodes[Math.floor(rnd() * LAT.nodes.length)]), q4 = pick4.map(p => G.latticeAddress(...p, EDGE));
@@ -210,6 +220,24 @@ const rs = Array.from({ length: 38 }, (_, i) => 0.02 + i * 0.025), hullOK = rs.e
 ok(hullOK, 'Ring gauge: between the stations the reading is the struts’ convex hull, checked against an independent hull');
 const sweep = Array.from({ length: 1001 }, (_, i) => ({ r: i / 1000, v: jv(i / 1000) })), top = sweep.reduce((a, b) => (b.v > a.v ? b : a));
 ok(top.v > 20 && top.r > 1 / PHI && top.r < 1, `Ring gauge: the hull swells to ${top.v.toFixed(3)} at a/b = ${top.r.toFixed(3)}, between the icosahedron and the vector equilibrium, before it falls`);
+{ // why the reading belongs to its fold: between the stations every gap is a skew quadrilateral, so folding it on the
+  // other diagonal gives a different volume; the shorter fold, summed here from plain triple products, is the gauge
+  const cone = (a, b, c) => Math.abs(det3(a, b, c)) / 6, less = (a, b) => a.map((v, i) => v - b[i]);
+  const inner = rs.filter(r => r > 0.05 && r < 0.95 && Math.abs(r - 1 / PHI) > 1e-3);
+  let skew = true, differs = true;
+  for (const r of inner) {
+    const J = G.jitterbug(r, RE); let shorter = 0, longer = 0;
+    for (const t of J.tris) { const v = cone(...t); shorter += v; longer += v; }
+    for (const q of J.squares) {
+      if (Math.abs(det3(less(q[1], q[0]), less(q[2], q[0]), less(q[3], q[0]))) < 1e-9) skew = false;
+      const on02 = cone(q[0], q[1], q[2]) + cone(q[0], q[2], q[3]), on13 = cone(q[1], q[2], q[3]) + cone(q[1], q[3], q[0]);
+      const short02 = dist(q[0], q[2]) <= dist(q[1], q[3]);
+      shorter += short02 ? on02 : on13; longer += short02 ? on13 : on02;
+    }
+    if (!near(shorter / tetE, jv(r), 1e-8) || Math.abs(shorter - longer) / tetE < 1e-6) differs = false;
+  }
+  ok(skew && differs, `Ring gauge: between the stations every gap is a skew quadrilateral, and folding it on the longer diagonal would read differently (${inner.length} ratios)`);
+}
 { // the ash over the station: each flake is a vector equilibrium of 20 tetravolumes
   const AE = 0.065, flat = G.veSolid(AE), tris = []; for (let i = 0; i < flat.length; i += 9) tris.push([flat.slice(i, i + 3), flat.slice(i + 3, i + 6), flat.slice(i + 6, i + 9)]);
   const edgesOK = tris.every(t => [[0, 1], [1, 2], [2, 0]].every(([a, b]) => { const l = dist(t[a], t[b]); return near(l, AE, 1e-12) || near(l, AE * Math.SQRT2, 1e-12); }));

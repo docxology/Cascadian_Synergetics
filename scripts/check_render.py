@@ -9,7 +9,8 @@ the PDF says what the sources say:
 3. every image the manuscript places is embedded, plus the cover, and each file
    it names exists in ``output/figures/``;
 4. the sections are numbered 1, 2, 3, ... in the table of contents, in the order
-   of the section files;
+   of the section files, and each kind of formal statement (Definition,
+   Proposition, Remark) is numbered 1 to n, one number for each block declared;
 5. LaTeX reported no missing glyph and no undefined citation or reference, and
    BibTeX reported no warning;
 6. every bibliography entry is printed: each entry's first author appears in the
@@ -74,7 +75,7 @@ def main() -> int:
         (r"\?\?", "an unresolved reference (??)"),
         (r"\[@", "an unprocessed citation [@...]"),
         (r"\{#", "a leaked label {#...}"),
-        (r"@(fig|sec|tbl|eq):", "a raw cross-reference key"),
+        (r"@(fig|sec|tbl|eq|def|prop|rem|thm|lem|cor|ex|claim|ax):", "a raw cross-reference key"),
     ):
         for m in re.finditer(pattern, flat):
             failures.append(f"{what} in the PDF text: ...{flat[max(0, m.start() - 40):m.end() + 40]}...")
@@ -82,7 +83,10 @@ def main() -> int:
     # 3. images
     placed: list[str] = []
     for section in sections():
-        placed += re.findall(r"!\[[^\]]*\]\(([^)\s]+)\)", section.read_text(encoding="utf-8"))
+        # A caption may hold cross-references in brackets, so find each figure by the target that ends its line.
+        for line in section.read_text(encoding="utf-8").splitlines():
+            if line.startswith("!["):
+                placed += re.findall(r"\]\(([^)\s]+)\)\{#fig:[^}]*\}\s*$", line)
     for target in placed:
         if not (FIGURES / Path(target).name).is_file():
             failures.append(f"figure {target} is placed but {FIGURES / Path(target).name} does not exist")
@@ -101,6 +105,20 @@ def main() -> int:
             titles.append(heading.group(1))
     if numbered[: len(titles)] != list(range(1, len(titles) + 1)):
         failures.append(f"table of contents numbers {numbered[:len(titles)]}, expected 1..{len(titles)} for {titles}")
+
+    # 4b. formal statements: each kind is numbered 1..n, as the template's formalism filter numbers them
+    kinds = {"definition": "Definition", "proposition": "Proposition", "remark": "Remark", "theorem": "Theorem",
+             "lemma": "Lemma", "corollary": "Corollary", "example": "Example", "claim": "Claim", "axiom": "Axiom"}
+    declared: dict[str, int] = {}
+    for section in sections():
+        for attrs in re.findall(r"^:::\s*\{([^}]*)\}", section.read_text(encoding="utf-8"), re.M):
+            for cls in re.findall(r"\.([\w-]+)", attrs):
+                if cls in kinds and ".unnumbered" not in attrs:
+                    declared[kinds[cls]] = declared.get(kinds[cls], 0) + 1
+    for kind, n in sorted(declared.items()):
+        seen = sorted({int(m) for m in re.findall(rf"\b{kind} (\d+)\b", flat)})
+        if seen != list(range(1, n + 1)):
+            failures.append(f"{kind}s in the PDF carry the numbers {seen}; the sources declare {n}")
 
     # 5. the LaTeX and BibTeX logs
     log = LOG.read_text(encoding="utf-8", errors="replace") if LOG.is_file() else ""
@@ -127,7 +145,8 @@ def main() -> int:
         print(f"FAIL  {failure}", file=sys.stderr)
     if failures:
         return 1
-    print(f"ok    {PDF.name}: {pages} pages, {len(embedded)} images, {len(titles)} numbered sections, title {title!r}")
+    formal = ", ".join(f"{n} {kind.lower()}s" for kind, n in sorted(declared.items()))
+    print(f"ok    {PDF.name}: {pages} pages, {len(embedded)} images, {len(titles)} numbered sections, {formal}, title {title!r}")
     return 0
 
 

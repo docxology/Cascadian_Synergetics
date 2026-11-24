@@ -31,8 +31,11 @@ reads the fenced block below into the combined document's preamble.
 \usepackage{xcolor}
 \definecolor{grove}{HTML}{2E5E4E}
 
-% Cross-references and citations
+% Cross-references and citations. Addresses print in the text face and may
+% break after a hyphen as well as a slash.
+\PassOptionsToPackage{hyphens}{url}
 \usepackage{hyperref}
+\urlstyle{same}
 \hypersetup{
     colorlinks=true,
     allcolors=grove

@@ -120,6 +120,21 @@ function aModules(G, TET_V) {
   return { count: mods.length, share: [...shares][0].split('/'), hand: left, xyz };
 }
 
+/* The addresses the paper prints: the repository and its Pages site from CITATION.cff, the imports from the vendor lock,
+   the archive's DOIs from CITATION.cff. A game's address must be a folder this repository builds and Pages serves. */
+function links(lock) {
+  const cff = read('CITATION.cff'), field = name => (cff.match(new RegExp(`^${name}:\\s*"?([^"\\s]+)"?`, 'm')) || [])[1];
+  const ids = [...cff.matchAll(/^\s*-\s*type:\s*doi\s*\n\s*value:\s*(\S+)\s*\n\s*description:\s*"([^"]*)"/gm)].map(m => ({ doi: m[1], about: m[2] }));
+  const concept = ids.find(i => /concept/i.test(i.about)), play = field('url'), repo = field('repository-code');
+  if (!play || !play.endsWith('/') || !repo || !concept || !field('doi')) throw new Error('CITATION.cff: needs url (ending in /), repository-code, doi and a concept DOI identifier');
+  for (const game of ['field-station', 'storybook']) if (!existsSync(join(ROOT, game, 'index.html'))) throw new Error(`${game}/index.html is missing, so ${play}${game}/ would serve nothing`);
+  const repoOf = name => lock.sources.find(s => s.name === name).repository;
+  return {
+    repositoryUrl: repo, playUrl: play, fieldStationUrl: `${play}field-station/`, storybookUrl: `${play}storybook/`,
+    quadcraftUrl: repoOf('quadcraft'), quadmathUrl: repoOf('quadmath'), versionDoi: field('doi'), conceptDoi: concept.doi,
+  };
+}
+
 export function computeFacts() {
   const fix = JSON.parse(read('tests/fixtures/quadmath.json')), lock = JSON.parse(read('vendor/vendor.lock.json'));
   const G = geometry(), FS = fieldStation(), SB = storybook(), S = sweep(G), C = cube(G, FS.TET_V), A = aModules(G, FS.TET_V);
@@ -180,6 +195,8 @@ export function computeFacts() {
     quadmathCommit: src('quadmath').commit.slice(0, 7),
     quadmathDoi: src('quadmath').doi,
     threeRevision: FS.threeRevision,
+    // where the work is
+    ...links(lock),
   };
 }
 
@@ -198,9 +215,26 @@ export function series() {
   const G = geometry(), FS = fieldStation(), S = sweep(G), A = aModules(G, FS.TET_V);
   const fix = JSON.parse(read('tests/fixtures/quadmath.json'));
   const lattice = G.ivmLattice(FS.latticeRadius, FS.latticeEdge);
-  const ico = G.jitterbug(1 / PHI, FS.latticeEdge);
+  const ico = G.jitterbug(1 / PHI, FS.latticeEdge), C = cube(G, FS.TET_V), lock = JSON.parse(read('vendor/vendor.lock.json'));
+  const xyz = q => { const c = new G.Quadray(...q).toCartesian(); return [c.x, c.y, c.z]; };
+  const moves = G.IVM_NEIGHBOR_MOVES, isMove = d => moves.some(m => { const k = Math.min(...d); return d.every((v, i) => v - k === m[i]); });
+  const veEdges = [];
+  for (let i = 0; i < moves.length; i++) for (let j = i + 1; j < moves.length; j++) if (isMove(moves[j].map((v, k) => v - moves[i][k]))) veEdges.push([i, j]);
+  const pieces = [[-1, -1, -1], [1, 1, -1], [1, -1, 1], [-1, 1, 1]].map(c => [c, ...FS.TET_V.filter(v => dist(v, c) < 2.9)]);
   return {
-    jitterbug: { points: S.points, peak: S.peak, stations: S.stations },
+    jitterbug: {
+      points: S.points, peak: S.peak, stations: S.stations,
+      // the shapes the gauge reads, at the stations and at the hull's peak, with unit edge
+      shapes: [...S.stations.map(s => ({ name: s.name, r: s.r })), { name: 'hull peak', r: S.peak.r }]
+        .sort((a, b) => a.r - b.r).map(s => ({ ...s, ...G.jitterbug(s.r, 1) })),
+    },
+    quadrays: {
+      basis: G.Quadray.BASIS.map(b => ({ quadray: [b.a, b.b, b.c, b.d], xyz: xyz([b.a, b.b, b.c, b.d]) })),
+      moves: moves.map(m => ({ quadray: m, xyz: xyz(m) })),
+      veEdges,   // pairs of moves one move apart: the vector equilibrium the twelve neighbours make
+    },
+    cube: { tetrahedron: FS.TET_V, pieces, tet: C.tet, corners: C.corners, total: C.total },
+    schema: { quadcraft: lock.sources.find(s => s.name === 'quadcraft').commit.slice(0, 7), quadmath: lock.sources.find(s => s.name === 'quadmath').commit.slice(0, 7) },
     aModules: { tetrahedron: FS.TET_V, modules: A.xyz },
     fixture: {
       integer: fix.random_integer.map(c => c.ace[1]),
@@ -252,6 +286,14 @@ export function problems(path, text, facts) {
 
 const TOKEN = /\{\{([A-Z][A-Z0-9_]*)\}\}/g;
 
+/* The label prefixes the template's pre-render validator accepts as cross-references rather than citation keys
+   (CROSSREF_PREFIXES in infrastructure/validation/content/validator_citations.py). Its formalism filter numbers more
+   kinds than this list names (a remark, a lemma), so a label must use one of these whatever kind it labels. */
+const TEMPLATE_LABEL_PREFIXES = ['sec', 'fig', 'tbl', 'eq', 'lst', 'def', 'prop', 'inv', 'conj', 'alg', 'thm'];
+
+/* The block kinds the template's formalism filter (infrastructure/rendering/formalism.lua) numbers. */
+const FORMALISMS = new Set(['definition', 'proposition', 'theorem', 'lemma', 'corollary', 'remark', 'axiom', 'claim', 'example']);
+
 /* The manuscript's numeral rule. A number the repository computes or pins is a token. Inside math, single
    digits are notation (the 2 of a square root, the 5 in the definition of phi) and stay; a number of two or
    more digits, or a decimal, is a result and must be a token. Outside math no digit may be typed at all.
@@ -262,6 +304,25 @@ export function manuscriptProblems(T = tokens()) {
   const bib = new Set([...read(`${MANUSCRIPT}/references.bib`).matchAll(/@\w+\{([^,\s]+),/g)].map(m => m[1]));
   const sections = readdirSync(dir).filter(f => f.endsWith('.md') && !MS_NOT_PROSE.has(f)).sort();
   if (!sections.length) out.push(`${MANUSCRIPT}: no sections`);
+  // Labels a cross-reference may name: pandoc-crossref's (headings, figures, tables, equations) and the formalism blocks the
+  // template's formalism filter numbers (::: {.definition #def:x}); each must be declared once.
+  const declared = new Set();
+  for (const f of sections) {
+    const path = `${MANUSCRIPT}/${f}`, text = read(path);
+    const declare = id => {
+      if (declared.has(id)) out.push(`${path}: the label ${id} is declared twice`);
+      if (!TEMPLATE_LABEL_PREFIXES.includes(id.split(':')[0])) out.push(`${path}: the label ${id} has a prefix the template's pre-render validator takes for a citation key; use one of ${TEMPLATE_LABEL_PREFIXES.join(', ')}`);
+      declared.add(id);
+    };
+    for (const m of text.matchAll(/\{#((?:fig|sec|tbl|eq):[\w-]+)[^}]*\}/g)) declare(m[1]);
+    for (const m of text.matchAll(/^:::\s*\{([^}]*)\}/gm)) {
+      const classes = [...m[1].matchAll(/\.([\w-]+)/g)].map(c => c[1]), id = (m[1].match(/#([\w:-]+)/) || [])[1];
+      const kind = classes.find(c => FORMALISMS.has(c));
+      if (!kind) continue;
+      if (!id && !classes.includes('unnumbered')) out.push(`${path}: a ${kind} block needs a #label so that it can be referred to`);
+      if (id) declare(id);
+    }
+  }
   for (const f of sections) {
     const path = `${MANUSCRIPT}/${f}`, text = read(path);
     for (const m of text.matchAll(TOKEN)) if (!(m[1] in T)) out.push(`${path}: unknown token {{${m[1]}}}`);
@@ -272,9 +333,16 @@ export function manuscriptProblems(T = tokens()) {
     }
     for (const m of text.matchAll(/\[([^[\]]*@[^[\]]*)\]/g)) {
       for (const k of m[1].matchAll(/@([\w:-]+)/g)) {
-        if (/^(fig|sec|tbl|eq):/.test(k[1])) continue;
+        if (k[1].includes(':')) { if (!declared.has(k[1])) out.push(`${path}: [@${k[1]}] refers to a label that is not declared`); continue; }
         if (!bib.has(k[1])) out.push(`${path}: [@${k[1]}] has no entry in references.bib`);
       }
+    }
+    // A formalism block's title is prose too, though the fence line it sits on is blanked below.
+    for (const m of text.matchAll(/^:::.*title="([^"]*)"/gm)) if (/\d/.test(m[1].replace(TOKEN, ''))) out.push(`${path}:${text.slice(0, m.index).split('\n').length}: the block title "${m[1]}" types a number; make it a token`);
+    TOKEN.lastIndex = 0;
+    // Every display equation is numbered: a $$ ... $$ block carries its {#eq:...} label straight after it.
+    for (const m of text.matchAll(/\$\$[\s\S]*?\$\$/g)) {
+      if (!/^[ \t]*\{#eq:[\w-]+\}/.test(text.slice(m.index + m[0].length))) out.push(`${path}:${text.slice(0, m.index).split('\n').length}: a display equation without an {#eq:...} label would go unnumbered`);
     }
     // Blank out what is not prose, keeping every newline so that line numbers still point at the source.
     const blank = s => s.replace(/[^\n]/g, ' ');
@@ -285,6 +353,8 @@ export function manuscriptProblems(T = tokens()) {
       .replace(TOKEN, blank)                        // tokens
       .replace(/\]\([^)\s]*\)(\{[^}]*\})?/g, m => ']' + blank(m.slice(1)))   // link and image targets, with their attributes
       .replace(/\{#[^}]*\}/g, blank)                // heading, equation and table labels
+      .replace(/^:::.*$/gm, blank)                  // formalism block fences and their attributes
+      .replace(/<https?:\/\/[^>\s]*>/g, blank)       // addresses, which are names, not quantities
       .replace(/\[[^[\]]*@[^[\]]*\]/g, blank);      // citations and cross-references (never a caption around one)
     const lineOf = index => body.slice(0, index).split('\n').length;
     // display math may span lines; inline math may wrap onto the next line but never across a blank one

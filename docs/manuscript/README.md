@@ -7,7 +7,7 @@ by the [docxology/template](https://github.com/docxology/template) pipeline.
 
 | File | What it holds |
 |------|---------------|
-| `00_abstract.md` … `07_discussion.md` | the sections, rendered in file-name order |
+| `00_abstract.md` … `10_availability.md` | the sections, rendered in file-name order |
 | `99_references.md` | the References heading; BibTeX fills it from `references.bib` |
 | `references.bib` | every cited source; each DOI was resolved through doi.org |
 | `config.yaml` | title page, author, cover, keywords and render toggles, read literally by the template |
