@@ -4,8 +4,10 @@
 # title page and the publication metadata, and rejects any manuscript token
 # that survives here, so every value is literal. paper.version and
 # publication.intended_version must equal package.json and CITATION.cff, and
-# release_status must be one the template accepts; `node tools/facts.mjs
-# --check` enforces both.
+# release_status must be one the template accepts. last_published_version and
+# version_doi come together, a published paper's last published version is
+# its version, and CITATION.cff's doi is that version's DOI. `node
+# tools/facts.mjs --check` enforces all of it.
 
 paper:
   title: "Cascadian Synergetics"
@@ -30,6 +32,10 @@ authors:
 publication:
   release_status: "published"
   intended_version: "0.4.0"
+  last_published_version: "0.4.0"
+  doi: "10.5281/zenodo.24508082"  # concept DOI, every archived release; the cover prints it
+  version_doi: "10.5281/zenodo.24508085"
+  version_record: "https://zenodo.org/records/24508085"
   github_repository: "docxology/Cascadian_Synergetics"
   repository_url: "https://github.com/docxology/Cascadian_Synergetics"
   journal: ""

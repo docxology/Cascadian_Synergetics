@@ -14,6 +14,10 @@
 - **Release:** `config.yaml` (`version`, `intended_version`, `release_status`
   published) and the Discussion name release 0.4.0. At the next release, bump
   both versions with `package.json` and `CITATION.cff` and render again.
+- **Archive:** release 0.4.0 is on Zenodo as doi:10.5281/zenodo.24508085 (concept
+  doi:10.5281/zenodo.24508082, printed on the cover). The archived PDF is the one
+  attached to the v0.4.0 GitHub release; later renders differ from it only
+  where their sources do.
 - **Not covered:** behaviour visible only in a browser (drawing, sound,
   controls) is checked by hand through the games' test hooks, not by the local
   checks.

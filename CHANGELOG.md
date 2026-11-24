@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- Release 0.4.0 is archived on Zenodo as [doi:10.5281/zenodo.24508085](https://doi.org/10.5281/zenodo.24508085) (every release: [doi:10.5281/zenodo.24508082](https://doi.org/10.5281/zenodo.24508082)). `CITATION.cff`, the README and the paper's cover cite it, and `tools/facts.mjs --check` holds the paper's publication record to the template's rules: a published version has its DOI, and the citation file's DOI is that version's.
+
 ## 0.4.0 (2026-11-24)
 
 - **A paper.** `docs/manuscript/` holds a paper about the games, their geometry and how it is checked, rendered to `output/pdf/Cascadian_Synergetics_combined.pdf` by the docxology/template pipeline with `python3 scripts/build.py`. Every number in it is a token computed by `tools/facts.mjs`; the figures are drawn from the same code (`scripts/make_figures.py`); the build reads the render contract back out of the PDF (`scripts/check_render.py`) and records the PDF's digest beside its sources' digest, which the local checks compare.

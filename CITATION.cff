@@ -10,6 +10,14 @@ repository-code: "https://github.com/docxology/Cascadian_Synergetics"
 license: MIT
 version: 0.4.0
 date-released: 2026-11-24
+doi: 10.5281/zenodo.24508085
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.24508085
+    description: "Zenodo record of release 0.4.0: the paper and the source at tag v0.4.0"
+  - type: doi
+    value: 10.5281/zenodo.24508082
+    description: "Zenodo concept DOI: every archived release"
 abstract: >-
   Two playable patrols through a fog-bound Cascadian redwood grove, built around
   the Office of Synergetics Services gallery: a first-person Three.js field

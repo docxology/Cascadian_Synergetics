@@ -25,6 +25,12 @@ These hold for every file in `docs/manuscript/` that the template renders.
 - **`config.yaml` is literal.** The template reads it without hydration, so it
   carries no tokens. Its `version` and `intended_version` equal `package.json`
   and `CITATION.cff`, and `release_status` is `unreleased` or `published`.
+- **A release is published once it has a DOI.** After minting a Zenodo record,
+  set `last_published_version`, `doi` (the concept DOI, printed on the cover),
+  `version_doi` and `version_record`, and put the version DOI in `CITATION.cff`.
+  When the version is bumped for the next release, set `release_status` to
+  `unreleased` and drop `doi` from `CITATION.cff` until that release has its
+  own record.
 - **The paper describes a release.** The Discussion names release
   `{{VERSION}}`. Describe only what that release contains; to write about work
   the changelog still lists as unreleased, say so in that sentence.

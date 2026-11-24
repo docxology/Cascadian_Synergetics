@@ -2,6 +2,8 @@
 
 Two patrols through a fog-bound Cascadian redwood grove, where the Office of Synergetics Services keeps space from growing square.
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.24508082.svg)](https://doi.org/10.5281/zenodo.24508082)
+
 ![From the top of Lookout Rise in the field station, a mountain stands up out of the fog under a lenticular cloud; a ranger's lantern glows in the foreground.](docs/images/field-station-lookout.jpg)
 
 | Game | Kind | Source | Standalone page |
@@ -137,6 +139,8 @@ python3 scripts/build.py
 ```
 
 That needs a template checkout beside this one with its project lane linked here, plus Node, TeX, Pandoc with pandoc-crossref and poppler; [`docs/manuscript/README.md`](docs/manuscript/README.md) has the setup. Every number in the paper is computed by `tools/facts.mjs` and injected as the paper renders, and the figures are drawn from the same code. Local CI does not render; it checks that the committed PDF was rendered from the current sources.
+
+Release 0.4.0, the paper and the source at its tag, is archived on Zenodo as [doi:10.5281/zenodo.24508085](https://doi.org/10.5281/zenodo.24508085); [doi:10.5281/zenodo.24508082](https://doi.org/10.5281/zenodo.24508082) always resolves to the latest archived release.
 
 ## Editing and republishing
 

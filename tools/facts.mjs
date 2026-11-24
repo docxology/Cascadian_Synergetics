@@ -312,6 +312,17 @@ export function manuscriptProblems(T = tokens()) {
   if (!['unreleased', 'published'].includes(status)) out.push(`${MANUSCRIPT}/config.yaml: release_status ${status} is not unreleased or published`);
   const cffVersion = (cff.match(/^version:\s*(\S+)/m) || [])[1];
   if (cffVersion !== pkg) out.push(`CITATION.cff: version ${cffVersion} differs from package.json ${pkg}`);
+  /* the publication record follows the template's release rules; the template checks only its own projects */
+  const field = name => (cfg.match(new RegExp(`^\\s*${name}:\\s*"?([^"\\s#]*)"?`, 'm')) || [])[1] || '';
+  const published = field('last_published_version'), versionDoi = field('version_doi'), cffDoi = (cff.match(/^doi:\s*(\S+)/m) || [])[1] || '';
+  const isDoi = v => /^10\.\d{4,9}\/\S+$/.test(v);
+  if (Boolean(published) !== Boolean(versionDoi)) out.push(`${MANUSCRIPT}/config.yaml: last_published_version and version_doi must be given together`);
+  if (status === 'published' && published && published !== pkg) out.push(`${MANUSCRIPT}/config.yaml: release_status is published but the last published version is ${published}, not ${pkg}`);
+  if (status === 'unreleased' && published && published === pkg) out.push(`${MANUSCRIPT}/config.yaml: release_status is unreleased but ${pkg} is the last published version`);
+  for (const [where, v] of [['config.yaml doi', field('doi')], ['config.yaml version_doi', versionDoi], ['CITATION.cff doi', cffDoi],
+    ...[...cff.matchAll(/^\s*-\s*type:\s*doi\s*\n\s*value:\s*(\S+)/gm)].map(m => ['CITATION.cff identifier', m[1]])])
+    if (v && !isDoi(v)) out.push(`${where}: ${v} is not a DOI`);
+  if (cffDoi && (cffDoi !== versionDoi || cffVersion !== published)) out.push(`CITATION.cff: doi ${cffDoi} must be the version DOI of ${cffVersion} recorded in ${MANUSCRIPT}/config.yaml`);
   return out;
 }
 
