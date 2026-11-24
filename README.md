@@ -45,8 +45,11 @@ Both games carry things that are never named:
 - From Lookout Rise, a lenticular cloud stands over the peaks and the sun is red.
 - Sometimes a tall figure waits at the fog's edge, off to one side, after two wood knocks. Turn to it and it is gone.
 - Somewhere in the grove there is a white redwood.
+- At Public Works the ants build a tetrahedron out of Fuller's A-modules, one sliver at a time, then let it go and start again.
+- Stand still by a fallen log and the foxfire in the rotting wood begins to glow.
+- A rough-skinned newt crosses the trail in no hurry. Come close and it arches to show its orange underside.
 
-The field station adds what a first-person view can give: the mountain standing up out of the fog from the summit of Lookout Rise, and Highway 101 along the grove's west edge, where cars pass in the fog lights first and Dot keeps the diner. The storybook keeps its own diner on 101, its salmon run, its ant crew and its flooded roots.
+The field station adds what a first-person view can give: the mountain standing up out of the fog from the summit of Lookout Rise; with the sun at your back up there, the patrol's three shadows on the fog below, a glory of coloured rings round one head only, yours; and Highway 101 along the grove's west edge, where cars pass in the fog lights first and Dot keeps the diner. The storybook keeps its own diner on 101, its salmon run, its ant crew and its flooded roots.
 
 ## Controls
 

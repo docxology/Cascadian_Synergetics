@@ -52,6 +52,10 @@ Mark four nodes and the tetrahedron between them lights up while a brass counter
 
 The ash that drifts over the station falls in tiny vector equilibria, built from the jitterbug at its widest: eight triangles and six squares, 20 tetravolumes each. The checks rebuild a flake and measure it.
 
+## A-modules
+
+Fuller cut the regular tetrahedron into 24 identical pieces he called A quanta modules. Each joins the tetrahedron's centre, one corner, the midpoint of an edge at that corner, and the centre of a face holding both; twelve turn one way and twelve the other, so the pieces come in mirror pairs. The ants at Public Works build a tetrahedron from them, sliver by sliver. `aModules` in the shared geometry makes the pieces, and the checks confirm with QuadMath's exact determinant that each holds exactly one twenty-fourth.
+
 ## Tensegrity masts
 
 Each mast is three stacked three-strut prisms. In every stage the top triangle is turned 150° from the bottom one; struts join each bottom corner to its turned top corner, and cables close both triangles and run from each bottom corner to its nearer top corner. No strut touches another. Slack masts sag and lean; each clean pluck takes up a third of the slack. When the ground hums, a taut mast's cables shiver fast and it rings its three notes as a chord; a slack one rattles.

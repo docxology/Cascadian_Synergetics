@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+- From the field station's summit, with the sun at your back, the patrol's shadows on the fog below and a glory round your own.
+- The ants at Public Works build a tetrahedron from Fuller's 24 A-modules (both games); `aModules` joins the shared geometry and the checks confirm each module is exactly one twenty-fourth.
+- Foxfire on the fallen logs, and a rough-skinned newt that shows its orange underside (both games).
+
 ## 0.3.0 (2026-11-23)
 
 - **Both games carry the same instruments.** QuadCraft's quadray code and self-checks, QuadMath's exact tetravolume and the grove's shared geometry (`lib/grove-geometry.js`) are spliced into the field station and the storybook alike.

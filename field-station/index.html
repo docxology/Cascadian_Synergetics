@@ -848,6 +848,7 @@ if (typeof module !== 'undefined' && module.exports) {
  *   ivmLattice(radius, edge)     isotropic vector matrix nodes and struts within a radius
  *   latticeAddress(x, y, z, e)   a node's whole quadray address in QuadCraft's convention
  *   veSolid(E)                   a vector equilibrium as twenty triangles, for the ash
+ *   aModules(V)                  Fuller's 24 A quanta modules of the tetrahedron with corners V
  *
  * Needs QuadCraft's Quadray (vendor/quadcraft/quadray.js) and aceTetravolume (lib/tetravolume.js)
  * spliced before it. tools/build.mjs splices this file, unchanged, into both games.
@@ -894,6 +895,17 @@ function veSolid(E){
   for (const t of J.tris) for (const v of t) pos.push(...v);
   for (const q of J.squares) for (const [a, b, c] of [[0, 1, 2], [0, 2, 3]]) pos.push(...q[a], ...q[b], ...q[c]);
   return pos;
+}
+/* Fuller's A quanta modules: the tetrahedron with corners V cut into 24 equal pieces. Each joins the centre, a corner,
+   the midpoint of an edge at that corner and the centre of a face holding both; half turn one way, half the other.
+   Works in any coordinates where averages mean midpoints: XYZ, or quadrays. */
+function aModules(V){
+  const avg = (...ps) => ps[0].map((_, k) => ps.reduce((s, p) => s + p[k], 0) / ps.length), c = avg(...V), out = [];
+  for (let f = 0; f < 4; f++){
+    const face = [0, 1, 2, 3].filter(i => i !== f), fc = avg(...face.map(i => V[i]));
+    for (const v of face) for (const w of face) if (w !== v) out.push([c, V[v], avg(V[v], V[w]), fc]);
+  }
+  return out;
 }
 /* ==== end splice lib/grove-geometry.js ==== */
 const SELFTEST = verifyGeometricIdentities();
@@ -1179,6 +1191,7 @@ const FERN_POS = [];
 scene.add(ferns, sorrel);
 
 /* fallen logs, mossy on top */
+const FOXFIRE = [];
 const LOGS = [[40, -42, 0.5, 14], [-24, 20, 2.1, 11], [62, 46, 1.2, 12], [-70, -8, 0.3, 13], [20, 72, 2.6, 10]];
 for (const [x, z, rot, len] of LOGS){
   const r = 0.9, g = new THREE.Group();
@@ -1189,6 +1202,11 @@ for (const [x, z, rot, len] of LOGS){
   g.position.set(x, groundH(x, z) + r * 0.75, z); g.rotation.y = rot; scene.add(g);
   const c = Math.cos(rot), s = Math.sin(rot);
   for (let k = -2; k <= 2; k++) SOLIDS.push({ x: x + c * k * len / 5, z: z - s * k * len / 5, r: 1.05 });
+  /* foxfire: the fungus in the rotting wood glows faintly green, and only a still eye catches it */
+  const fp = []; for (let i = 0; i < 46; i++){ const xl = rand(-0.45, 0.45) * len, th = rand(-1.3, 1.3), rr = r * rand(1.0, 1.08); fp.push(xl, Math.cos(th) * rr, Math.sin(th) * rr); }
+  const fg = new THREE.BufferGeometry(); fg.setAttribute('position', new THREE.Float32BufferAttribute(fp, 3));
+  const glow = new THREE.Points(fg, new THREE.PointsMaterial({ map: TEX.soft, color: 0x9dff8a, size: 0.16, transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending }));
+  glow.visible = false; g.add(glow); FOXFIRE.push({ x, z, glow, k: 0 });
 }
 
 /* =========================================================
@@ -1465,6 +1483,20 @@ const MAILBOX = (() => {
   SOLIDS.push({ x: MAIL.x, z: MAIL.z, r: 0.35 });
   return { grp, door, flagPiv, tet, tglow, env, anim: -1, waiting: true, nextT: 0 };
 })();
+/* under the post-office lamp the ants are building a tetrahedron out of Fuller's A-modules, one sliver at a time, all 24 alike */
+const MODULES = (() => {
+  const grp = new THREE.Group(), base = groundH(LAMP.x + 0.8, LAMP.z); grp.position.set(LAMP.x + 0.8, base + 0.24, LAMP.z); grp.rotation.set(0.62, 0.4, 0); scene.add(grp);
+  const sc = 0.2, V = TET_V.map(v => v.map(c => c * sc)), mods = aModules(V);
+  const pieces = mods.map((m, i) => {
+    const cen = [0, 1, 2].map(k => (m[0][k] + m[1][k] + m[2][k] + m[3][k]) / 4), shrink = v => v.map((c, k) => cen[k] + (c - cen[k]) * 0.9), w = m.map(shrink);
+    const pos = []; for (const [a, b, c] of [[0, 1, 2], [0, 1, 3], [0, 2, 3], [1, 2, 3]]) pos.push(...w[a], ...w[b], ...w[c]);
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.computeVertexNormals();
+    const mesh = new THREE.Mesh(g, new THREE.MeshLambertMaterial({ color: i % 2 ? 0xe0a84e : 0xc69c48, emissive: 0x3a2408, side: THREE.DoubleSide, transparent: true, opacity: 1 }));
+    mesh.visible = false; grp.add(mesh); return { mesh, cen, from: [rand(-2.4, 2.4), 1.2, rand(-2.4, 2.4)] };
+  });
+  const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: TEX.soft, color: 0xffc070, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0 })); glow.scale.set(1.6, 1.6, 1); grp.add(glow);
+  return { grp, pieces, glow, t: rand(0, 20) };
+})();
 /* the ghost forest: drowned cedars, silver and bare, standing in tidal water */
 {
   const n = 11, snag = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.28, 0.6, 1, 9, 1), lam(0xb9bdb6), n);
@@ -1531,6 +1563,41 @@ const SUNDOWN = (() => {
   const az = gapAzimuth(LOOKOUT.x, LOOKOUT.z, Math.atan2(sunDir.z, sunDir.x), 0.6);
   sp.scale.set(420, 210, 1); sp.position.set(LOOKOUT.x + Math.cos(az) * 330, groundH(LOOKOUT.x, LOOKOUT.z) + 40, LOOKOUT.z + Math.sin(az) * 330); sp.visible = false; scene.add(sp);
   return { sp, az };
+})();
+/* from the summit, the sun at your back throws the patrol's shadows onto the fog below, huge, with a glory of coloured
+   rings round a head; each of the three sees the glory only round their own */
+const SPECTRE = (() => {
+  const shadowTex = canvasTex(256, 512, (g, w, h) => {
+    g.fillStyle = 'rgba(34,40,46,0.85)'; g.shadowColor = 'rgba(34,40,46,0.9)'; g.shadowBlur = 18;
+    g.beginPath(); g.ellipse(w / 2, h * 0.115, w * 0.27, h * 0.018, 0, 0, TAU); g.fill();
+    g.beginPath(); g.moveTo(w / 2, h * 0.02); g.lineTo(w * 0.62, h * 0.11); g.lineTo(w * 0.38, h * 0.11); g.closePath(); g.fill();
+    g.beginPath(); g.arc(w / 2, h * 0.155, w * 0.085, 0, TAU); g.fill();
+    g.beginPath(); g.moveTo(w * 0.42, h * 0.2); g.quadraticCurveTo(w * 0.3, h * 0.45, w * 0.26, h * 0.62); g.quadraticCurveTo(w / 2, h * 0.66, w * 0.74, h * 0.62); g.quadraticCurveTo(w * 0.7, h * 0.45, w * 0.58, h * 0.2); g.closePath(); g.fill();
+    g.lineWidth = w * 0.06; g.strokeStyle = g.fillStyle; g.lineCap = 'round'; g.beginPath(); g.moveTo(w * 0.44, h * 0.62); g.lineTo(w * 0.42, h * 0.95); g.moveTo(w * 0.56, h * 0.62); g.lineTo(w * 0.58, h * 0.95); g.stroke();
+  });
+  const gloryTex = canvasTex(256, 256, (g, w, h) => {
+    const gr = g.createRadialGradient(w / 2, h / 2, 0, w / 2, h / 2, w / 2);
+    [[0, 'rgba(255,255,255,0)'], [0.16, 'rgba(255,250,235,0.25)'], [0.26, 'rgba(120,150,255,0.55)'], [0.33, 'rgba(120,230,170,0.55)'], [0.39, 'rgba(255,236,120,0.55)'], [0.46, 'rgba(255,120,90,0.55)'], [0.53, 'rgba(255,120,90,0)'],
+     [0.6, 'rgba(130,160,255,0.28)'], [0.67, 'rgba(140,230,170,0.28)'], [0.74, 'rgba(255,226,130,0.28)'], [0.81, 'rgba(255,130,100,0.26)'], [0.9, 'rgba(255,130,100,0)'], [1, 'rgba(255,130,100,0)']].forEach(([t, c]) => gr.addColorStop(t, c));
+    g.fillStyle = gr; g.beginPath(); g.arc(w / 2, h / 2, w / 2, 0, TAU); g.fill();
+  });
+  const sprite = (tex, additive) => { const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false, depthTest: false, fog: false, opacity: 0, blending: additive ? THREE.AdditiveBlending : THREE.NormalBlending })); sp.visible = false; scene.add(sp); return sp; };
+  const shadows = [0, 1, 2].map(() => { const sp = sprite(shadowTex, false); sp.center.set(0.5, 0.86); sp.renderOrder = 3; return sp; });
+  const glory = sprite(gloryTex, true); glory.renderOrder = 4;
+  const sheet = sprite(TEX.soft, false); sheet.material.color.setHex(0xe9eee6); sheet.renderOrder = 2;
+  return { shadows, glory, sheet, seen: false, D: 34 };
+})();
+/* a rough-skinned newt crossing the beat in no hurry; come close and it arches, showing the orange underside that says leave me be */
+const NEWT = (() => {
+  const grp = new THREE.Group(), brown = lam(0x5a3e26), orange = lam(0xf07a28, { emissive: 0x3a1404 }), body = new THREE.Group(); grp.add(body);
+  const ell = (mat, sx, sy, sz, x, y, z, parent) => { const m = new THREE.Mesh(new THREE.SphereGeometry(0.5, 12, 8), mat); m.scale.set(sx, sy, sz); m.position.set(x, y, z); (parent || body).add(m); return m; };
+  ell(brown, 0.07, 0.045, 0.16, 0, 0.05, 0); ell(orange, 0.062, 0.03, 0.15, 0, 0.032, 0);
+  const head = new THREE.Group(); head.position.set(0, 0.05, 0.075); body.add(head); ell(brown, 0.06, 0.035, 0.07, 0, 0.005, 0.03, head); ell(orange, 0.05, 0.022, 0.06, 0, -0.01, 0.03, head);
+  const tail = new THREE.Group(); tail.position.set(0, 0.045, -0.075); body.add(tail); const tm = new THREE.Mesh(new THREE.ConeGeometry(0.025, 0.16, 6), brown); tm.rotation.x = -Math.PI / 2; tm.position.z = -0.08; tail.add(tm);
+  const legs = [[-1, 1], [1, 1], [-1, -1], [1, -1]].map(([sx, sz]) => { const l = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 0.06, 5), brown); l.position.set(sx * 0.04, 0.02, sz * 0.045); l.rotation.z = sx * 1.1; body.add(l); return l; });
+  grp.scale.setScalar(1.6); scene.add(grp);
+  const a = 0.3, cx = Math.cos(a) * BEAT_R, cz = Math.sin(a) * BEAT_R;
+  return { grp, body, head, tail, legs, cx, cz, dx: Math.cos(a), dz: Math.sin(a), u: 0, dir: 1, pause: 0, reflex: 0, cool: 0, seen: false };
 })();
 /* Roosevelt elk grazing the lookout clearing: a bull, two cows and a calf. They lift their heads when you come near, and move off if you keep coming */
 const HERD_HOME = { x: -13, z: -80 };
@@ -2232,9 +2299,10 @@ function update(dt){
   if (S.node && !S.spoke.mark){ S.spoke.mark = true; setTimeout(() => say(SITKA, 'Mark four.'), 700); }
   const big = IVM_BIG.userData, bigT = S.fin ? sstep(3, 7, S.fin.t) * (1 - sstep(13, 16.5, S.fin.t)) : 0;
   big.lines.material.opacity = bigT * 0.9; big.pts.material.opacity = bigT * (0.7 + 0.3 * Math.sin(t * 2)); IVM_BIG.visible = bigT > 0.01; IVM_BIG.rotation.y = t * 0.02;
-  updVisitor(dt); updQuake(dt); updElk(dt); updMurrelets(dt); updAsh(dt); updMail(dt); updRoadside(dt);
+  updVisitor(dt); updQuake(dt); updElk(dt); updMurrelets(dt); updAsh(dt); updMail(dt); updRoadside(dt); updSpectre(); updFoxfire(dt); updModules(dt); updNewt(dt);
   { const k = S.mode === 'play' || S.mode === 'ledger' ? sstep(9.5, 12.5, pl.y) * sstep(16, 7, hyp(pl.x - LOOKOUT.x, pl.z - LOOKOUT.z)) : 0, m = VISTA.sp.material;
     m.opacity = lerp(m.opacity, k * 0.78, Math.min(1, dt * 0.45)); VISTA.sp.visible = m.opacity > 0.01;
+    VISTA.k = k;
     if (k > 0.8 && !VISTA.seen){ VISTA.seen = true; setTimeout(() => say(MADRONE, 'Mountain’s out.'), 2200); }
     const sm = SUNDOWN.sp.material; sm.opacity = lerp(sm.opacity, k * 0.9, Math.min(1, dt * 0.45)); SUNDOWN.sp.visible = sm.opacity > 0.01;
     sun.material.opacity = 0.9 * (1 - sm.opacity); scene.fog.color.lerp(SUN_RED, sm.opacity * 0.18); scene.background.copy(scene.fog.color); sky.material.uniforms.horizon.value.copy(scene.fog.color); }
@@ -2343,6 +2411,49 @@ function updAsh(dt){
     e.set(S.t * f.spin + f.ph, S.t * f.spin * 0.7, f.ph); q.setFromEuler(e); const s = f.y < 1.5 ? f.y / 1.5 : 1; sc.set(s, s, s); v.set(x, gy + 0.05 + f.y, z); m.compose(v, q, sc); ASH.mesh.setMatrixAt(i, m);
   });
   ASH.mesh.instanceMatrix.needsUpdate = true;
+}
+function updSpectre(){
+  const Sp = SPECTRE, k = VISTA.k || 0, pl = S.pl, D = Sp.D;
+  const heads = [[pl.x, pl.y + pl.eye, pl.z], [SITKA.x, groundH(SITKA.x, SITKA.z) + 1.65, SITKA.z], [MADRONE.x, groundH(MADRONE.x, MADRONE.z) + 1.65, MADRONE.z]];
+  Sp.shadows.forEach((sp, i) => { const h = heads[i]; sp.position.set(h[0] - sunDir.x * D, h[1] - sunDir.y * D, h[2] - sunDir.z * D); sp.scale.set(6.6, 13.2, 1); sp.material.opacity = k * (i ? 0.38 : 0.5); sp.material.rotation = i ? 0 : (pl.moving && !REDUCED ? Math.sin(pl.phase) * 0.05 : 0); sp.visible = k > 0.01; });
+  Sp.sheet.position.copy(Sp.shadows[0].position); Sp.sheet.position.y -= 3; Sp.sheet.scale.set(46, 30, 1); Sp.sheet.material.opacity = k * 0.85; Sp.sheet.visible = k > 0.01;
+  Sp.glory.position.copy(Sp.shadows[0].position); Sp.glory.scale.set(7.6, 7.6, 1); Sp.glory.material.opacity = k * (0.55 + (REDUCED ? 0 : 0.08 * Math.sin(S.t * 1.3))); Sp.glory.visible = k > 0.01;
+  if (k > 0.8 && !Sp.seen && S.mode === 'play'){ camera.getWorldDirection(_fw); if (-(_fw.x * sunDir.x + _fw.y * sunDir.y + _fw.z * sunDir.z) > Math.cos(0.45)){ Sp.seen = true; setTimeout(() => say(MADRONE, '…That’s us.'), 900); setTimeout(() => say(SITKA, 'Wave.'), 3200); } }
+}
+function updFoxfire(dt){
+  const pl = S.pl;
+  for (const f of FOXFIRE){
+    const near = hyp(pl.x - f.x, pl.z - f.z) < 10, target = near && S.still > 3 ? 1 : 0;
+    f.k = lerp(f.k, target, Math.min(1, dt * (target ? 0.5 : 2))); f.glow.visible = f.k > 0.01;
+    if (f.glow.visible){ f.glow.material.opacity = f.k * (0.65 + (REDUCED ? 0 : 0.25 * Math.sin(S.t * 2.1 + f.x))); }
+    if (f.k > 0.7 && !S.spoke.foxfire){ S.spoke.foxfire = true; setTimeout(() => say(MADRONE, 'Log’s awake.'), 700); }
+  }
+}
+function updModules(dt){
+  const M = MODULES, n = M.pieces.length, per = 1.1, hold = 7, cycle = n * per + hold + 2;
+  if (hyp(S.pl.x - LAMP.x, S.pl.z - LAMP.z) > 70) return;
+  M.t = (M.t + dt) % cycle; const t = M.t;
+  M.pieces.forEach((p, i) => {
+    const t0 = i * per, k = clamp((t - t0) / per, 0, 1), gone = t > n * per + hold ? clamp((t - n * per - hold) / 2, 0, 1) : 0;
+    p.mesh.visible = k > 0 && gone < 1; if (!p.mesh.visible) return;
+    const e = smooth(k), arc = Math.sin(k * Math.PI) * 0.6;
+    p.mesh.position.set(p.from[0] * (1 - e), p.from[1] * (1 - e) + arc, p.from[2] * (1 - e)); p.mesh.material.opacity = 1 - gone;
+  });
+  const whole = t > n * per && t < n * per + hold; M.glow.material.opacity = whole ? 0.55 + 0.25 * Math.sin(t * 3) : 0;
+  if (whole && !M.chimed){ M.chimed = true; if (hyp(S.pl.x - LAMP.x, S.pl.z - LAMP.z) < 18) [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => AU.bell(f, i * 0.1, 0.03)); } if (!whole) M.chimed = false;
+}
+function updNewt(dt){
+  const N = NEWT, pl = S.pl, x = N.cx + N.dx * (N.u - 0.5) * 6, z = N.cz + N.dz * (N.u - 0.5) * 6, d = hyp(pl.x - x, pl.z - z);
+  if (d > 60) return;
+  N.cool = Math.max(0, N.cool - dt);
+  if (N.reflex <= 0 && N.cool <= 0 && d < 2.4 && S.mode === 'play'){ N.reflex = 4.5; N.cool = 9; if (!N.seen){ N.seen = true; setTimeout(() => say(SITKA, 'Don’t lick it.'), 900); } }
+  let arch = 0;
+  if (N.reflex > 0){ N.reflex -= dt; arch = smooth(clamp(Math.min(4.5 - N.reflex, N.reflex) / 0.5, 0, 1)); }
+  else if (N.pause > 0) N.pause -= dt;
+  else { N.u += N.dir * 0.012 * dt; if (N.u > 1 || N.u < 0){ N.u = clamp(N.u, 0, 1); N.dir *= -1; N.pause = rand(4, 10); } }
+  N.grp.position.set(x, groundH(x, z) + 0.005, z); N.grp.rotation.y = Math.atan2(N.dx * N.dir, N.dz * N.dir);
+  N.head.rotation.x = -0.9 * arch; N.tail.rotation.x = -1.0 * arch; N.body.position.y = 0.012 * arch;
+  const step = N.reflex <= 0 && N.pause <= 0 && !REDUCED ? Math.sin(S.t * 5) * 0.35 : 0; N.legs.forEach((l, i) => { l.rotation.x = (i % 3 ? step : -step); });
 }
 /* the visitor: stands at the fog's edge, off to one side; gone when you look straight at it */
 function updVisitor(dt){
@@ -2462,6 +2573,10 @@ window.__fs = {
   ringVolume(){ return VE.vol; },
   gaugeMarks(){ return GAUGE_MARKS.slice(); },
   quake(){ startQuake(); return true; },
+  spectre(){ return { k: +(VISTA.k || 0).toFixed(3), seen: SPECTRE.seen, glory: SPECTRE.glory.position.toArray().map(v => +v.toFixed(1)), opacity: +SPECTRE.glory.material.opacity.toFixed(3) }; },
+  foxfire(){ return FOXFIRE.map(f => +f.k.toFixed(2)); },
+  modules(){ return { built: MODULES.pieces.filter(p => p.mesh.visible).length, of: MODULES.pieces.length, t: +MODULES.t.toFixed(1) }; },
+  newt(){ const N = NEWT; return { u: +N.u.toFixed(3), reflex: +N.reflex.toFixed(2), at: N.grp.position.toArray().map(v => +v.toFixed(2)) }; },
   autowalk(on){ if (typeof on === 'boolean') S.autowalk = on; return S.autowalk; },
   /* render one sound offline and measure it: loudness, and the strongest frequency at each of the given times */
   async audioCheck(name, args, dur, at){

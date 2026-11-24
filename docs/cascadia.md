@@ -18,6 +18,9 @@ The grove is invented; most of what lives in it is not.
 - **The Redwood Highway.** US 101 through Del Norte and Humboldt counties carries that name, winding between old-growth trunks with the fog lying on it. Roadside diners along it serve coffee and pie.
 - **Fire lookouts** stand on Cascadian summits and ridges, their lamps the last lights in the fog.
 - **"The mountain's out."** Around Puget Sound people say it on the days Rainier shows itself over the cloud, and the same feeling belongs to every Cascade volcano seen from the coast. From the top of Lookout Rise, one stands up out of the fog.
+- **Brocken spectres.** From a summit above fog with the sun low behind you, your shadow falls on the fog below, looking enormous, and a glory (rings of colour) circles the shadow's head. Each person sees the glory round their own head only. The field station's summit shows the patrol's three shadows and one glory.
+- **Foxfire.** Fungi in rotting wood can glow faintly green; the mycelium of honey mushrooms (*Armillaria*), common in Pacific Northwest forests, is among them.
+- **Rough-skinned newts** (*Taricha granulosa*) walk the wet forest floor slowly. Their skin carries tetrodotoxin, and a threatened newt arches its back to show its bright orange underside.
 - **Lenticular clouds** form where moist air flows over a high peak in stable layers, stacking into smooth lenses that hang still over the summit. The Cascade stratovolcanoes, Shasta and Rainier among them, wear them often.
 - **Foghorns** sound from the coast, low and two-toned.
 - **The visitor** at the fog's edge belongs to the region's Sasquatch lore, where two knocks on wood are a familiar sign.

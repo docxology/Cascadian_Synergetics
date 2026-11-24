@@ -171,7 +171,7 @@ const block = path => src.match(new RegExp(`/\\* ==== splice ${path.replace(/[.*
 const fn = name => grab(new RegExp(`function ${name}\\([\\s\\S]*?\\n}\\n`), name);
 const game = {}; vm.createContext(game);
 vm.runInContext([...SPLICES['src/field-station.html'].map(block),
-  'this.out = { ivmLattice, latticeAddress, jitterVolume, jitterbug, veSolid, aceTetravolumeExact, IVM_NEIGHBOR_MOVES };'].join('\n'), game);
+  'this.out = { ivmLattice, latticeAddress, jitterVolume, jitterbug, veSolid, aModules, aceTetravolumeExact, IVM_NEIGHBOR_MOVES };'].join('\n'), game);
 const G = game.out, EDGE = 2.4, LAT = G.ivmLattice(11, EDGE);
 const addr = LAT.nodes.map(p => G.latticeAddress(...p, EDGE));
 ok(addr.every(Boolean), `lattice: all ${LAT.nodes.length} nodes of the stillness lattice have whole QuadCraft addresses`);
@@ -210,6 +210,12 @@ ok(top.v > 20 && top.r > 1 / PHI && top.r < 1, `Ring gauge: the hull swells to $
   const edgesOK = tris.every(t => [[0, 1], [1, 2], [2, 0]].every(([a, b]) => { const l = dist(t[a], t[b]); return near(l, AE, 1e-12) || near(l, AE * Math.SQRT2, 1e-12); }));
   const V = tris.reduce((s, [a, b, c]) => s + Math.abs(det3(a, b, c)) / 6, 0) / (AE ** 3 / (6 * Math.SQRT2));
   ok(tris.length === 20 && edgesOK && near(V, 20, 1e-9), 'ash: each flake is a vector equilibrium, 8 triangles and 6 squares closing 20 tetravolumes');
+}
+{ // the ants' tetrahedron: Fuller's A-modules, 24 alike, each exactly one twenty-fourth, half of each hand
+  const Q = [[12, 0, 0, 0], [0, 12, 0, 0], [0, 0, 12, 0], [0, 0, 0, 12]], whole = G.aceTetravolumeExact(...Q), mods = G.aModules(Q);
+  const each = mods.map(m => G.aceTetravolumeExact(...m)), exact = each.every(([n, d]) => n * 24n * whole[1] === whole[0] * d);
+  const sub = (a, b) => a.map((v, i) => v - b[i]), signs = G.aModules(g.TET_V).map(m => Math.sign(det3(sub(m[1], m[0]), sub(m[2], m[0]), sub(m[3], m[0]))));
+  ok(mods.length === 24 && exact && signs.filter(v => v > 0).length === 12 && signs.filter(v => v < 0).length === 12, 'A-modules: 24 of them, each exactly 1/24 of the tetrahedron by the 5x5 determinant, 12 left-handed and 12 right-handed');
 }
 { // the storybook's lattice closes around its looping beat, so addresses never break where the loop joins
   const sb = read('src/storybook.html'), env = {}; vm.createContext(env);
