@@ -302,8 +302,15 @@ export function manuscriptProblems(T = tokens()) {
   const pkg = JSON.parse(read('package.json')).version, cfg = read(`${MANUSCRIPT}/config.yaml`), cff = read('CITATION.cff');
   if (TOKEN.test(cfg)) out.push(`${MANUSCRIPT}/config.yaml: the renderer reads this file literally; it cannot carry tokens`);
   TOKEN.lastIndex = 0;
-  const cfgVersion = (cfg.match(/^\s*version:\s*"?([^"\s]+)"?/m) || [])[1], cffVersion = (cff.match(/^version:\s*(\S+)/m) || [])[1];
-  if (cfgVersion !== pkg) out.push(`${MANUSCRIPT}/config.yaml: version ${cfgVersion} differs from package.json ${pkg}`);
+  /* every version the config states for this paper (its own and the publication's intended one) is the package's */
+  for (const field of ['version', 'intended_version']) {
+    const found = [...cfg.matchAll(new RegExp(`^\\s*${field}:\\s*"?([^"\\s#]*)"?`, 'gm'))].map(m => m[1]);
+    if (!found.length) out.push(`${MANUSCRIPT}/config.yaml: ${field} is missing`);
+    for (const v of found) if (v !== pkg) out.push(`${MANUSCRIPT}/config.yaml: ${field} ${v || '(empty)'} differs from package.json ${pkg}`);
+  }
+  const status = (cfg.match(/^\s*release_status:\s*"?([^"\s#]*)"?/m) || [])[1];
+  if (!['unreleased', 'published'].includes(status)) out.push(`${MANUSCRIPT}/config.yaml: release_status ${status} is not unreleased or published`);
+  const cffVersion = (cff.match(/^version:\s*(\S+)/m) || [])[1];
   if (cffVersion !== pkg) out.push(`CITATION.cff: version ${cffVersion} differs from package.json ${pkg}`);
   return out;
 }

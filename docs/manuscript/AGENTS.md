@@ -23,7 +23,11 @@ These hold for every file in `docs/manuscript/` that the template renders.
   `node tools/facts.mjs --series` returns. Place a figure with a path from this
   folder, `../../output/figures/<name>`, and a `{#fig:...}` label.
 - **`config.yaml` is literal.** The template reads it without hydration, so it
-  carries no tokens. Its version equals `package.json` and `CITATION.cff`.
+  carries no tokens. Its `version` and `intended_version` equal `package.json`
+  and `CITATION.cff`, and `release_status` is `unreleased` or `published`.
+- **The paper describes a release.** The Discussion names release
+  `{{VERSION}}`. Describe only what that release contains; to write about work
+  the changelog still lists as unreleased, say so in that sentence.
 - **Claims stay inside the checks.** A statement about the geometry must be one
   that `tests/check.mjs` checks, and a statement about the games must be true
   of `src/`. Write what the code does, not what synergetics might imply.

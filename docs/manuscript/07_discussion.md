@@ -26,8 +26,7 @@ hand, while the other figures are drawn from the code. Each of these is a place
 where the same discipline could reach further: a measurement the player can
 make, computed by code the tests already hold to its source.
 
-This paper describes the repository as it stands after its release
-{{VERSION}}, including work its changelog still lists as unreleased. The
+This paper describes release {{VERSION}} of the repository. The
 repository, its games and this paper are under the MIT licence; the copied
 QuadCraft and QuadMath files keep their Apache licence, whose text travels with
 them.

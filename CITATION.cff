@@ -5,17 +5,20 @@ type: software
 authors:
   - family-names: Friedman
     given-names: Daniel Ari
+    orcid: "https://orcid.org/0000-0001-6232-9096"
 repository-code: "https://github.com/docxology/Cascadian_Synergetics"
 license: MIT
-version: 0.3.0
-date-released: 2026-11-23
+version: 0.4.0
+date-released: 2026-11-24
 abstract: >-
   Two playable patrols through a fog-bound Cascadian redwood grove, built around
   the Office of Synergetics Services gallery: a first-person Three.js field
   station and a 2.5D storybook patrol. Synergetic geometry (the jitterbug,
-  quadray coordinates, the isotropic vector matrix, tensegrity) is shown in play
-  rather than explained. The field station runs QuadCraft's quadray code and a
-  tested port of QuadMath's exact tetravolume.
+  quadray coordinates, the isotropic vector matrix, tensegrity, Fuller's A
+  modules) is shown in play rather than explained. Both games run QuadCraft's
+  quadray code and a tested port of QuadMath's exact tetravolume, and a paper in
+  docs/manuscript, rendered through docxology/template, describes the geometry
+  and how each claim about it is checked.
 keywords:
   - synergetics
   - Buckminster Fuller

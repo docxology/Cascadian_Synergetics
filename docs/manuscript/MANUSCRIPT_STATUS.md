@@ -1,7 +1,8 @@
 # Manuscript status
 
-- **State:** complete draft; renders through docxology/template with the render
-  contract passing (`scripts/check_render.py`).
+- **State:** released with the repository's 0.4.0, the first release to carry
+  the paper; renders through docxology/template with the render contract
+  passing (`scripts/check_render.py`).
 - **Numbers:** every number is a token computed by `tools/facts.mjs`; the one
   sourced fact (the month of the Cascadia earthquake, January 1700; the day is
   deliberately not stated) is bound to its citation.
@@ -10,10 +11,9 @@
   captured by hand.
 - **Bibliography:** every DOI resolved through doi.org when the entry was
   written; the gallery entry has no DOI and records its access date.
-- **Release:** unreleased. `config.yaml` and the Discussion carry the
-  repository's current version (the Discussion says the paper also covers
-  unreleased work); bump it with `package.json` and `CITATION.cff` when cutting
-  a release.
+- **Release:** `config.yaml` (`version`, `intended_version`, `release_status`
+  published) and the Discussion name release 0.4.0. At the next release, bump
+  both versions with `package.json` and `CITATION.cff` and render again.
 - **Not covered:** behaviour visible only in a browser (drawing, sound,
   controls) is checked by hand through the games' test hooks, not by the local
   checks.

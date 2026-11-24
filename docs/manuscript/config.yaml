@@ -2,13 +2,15 @@
 #
 # The docxology/template renderer loads this file with yaml.safe_load for the
 # title page and the publication metadata, and rejects any manuscript token
-# that survives here, so every value is literal. The version must equal
-# package.json and CITATION.cff; `node tools/facts.mjs --check` enforces that.
+# that survives here, so every value is literal. paper.version and
+# publication.intended_version must equal package.json and CITATION.cff, and
+# release_status must be one the template accepts; `node tools/facts.mjs
+# --check` enforces both.
 
 paper:
   title: "Cascadian Synergetics"
   subtitle: "Synergetic Geometry, Shown and Checked, in Two Browser Games"
-  version: "0.3.0"
+  version: "0.4.0"
   date: ""  # left empty: the renderer stamps the build date
   cover:
     image: "../../output/figures/fig_cover.png"
@@ -26,8 +28,8 @@ authors:
     corresponding: true
 
 publication:
-  release_status: "unreleased"
-  intended_version: "0.3.0"
+  release_status: "published"
+  intended_version: "0.4.0"
   github_repository: "docxology/Cascadian_Synergetics"
   repository_url: "https://github.com/docxology/Cascadian_Synergetics"
   journal: ""
