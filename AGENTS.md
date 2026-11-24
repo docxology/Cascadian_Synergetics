@@ -28,14 +28,16 @@ CI is local only: `node tools/ci.mjs` checks a clean export of a commit, and `.g
 - **True geometry.** Any synergetic quantity the games show must hold. `tests/check.mjs` checks the quadray conversion, the jitterbug, the cube decomposition, the lattice addresses, the tally and the Ring's dial against the functions the field station runs, with the imported code as spliced; extend it when you add geometry.
 - **No fail state.** The patrol cannot be lost. Tasks wait; the beat loops.
 - **Comfort.** Respect `prefers-reduced-motion`: no head bob, glitch flicker, tremor shake or forced camera moves.
-- **A stable grove.** The seeded `R()` builds the layout. Anything that moves or comes and goes (animals, birds, flakes, timers) uses `rand()`, so adding a wonder never shifts the trees, pins or cubes generated after it.
+- **A stable grove.** The seeded `R()` builds the layout. Anything that moves or comes and goes (animals, birds, flakes, timers) uses `rand()`, so adding a wonder never shifts the trees, pins or cubes generated after it. To clear ground for something new, mark trees (as `t.cut` does for the road) and scale ferns to nothing, never skip a seeded draw.
 
 ## Testing in a browser
 
 Serve the folder (`python3 -m http.server 8000`) and use the test hooks from the console:
 
 - Storybook: `window.__oss.step(seconds)`, `teleport(x, z)`, `finishTasks()`.
-- Field station: `window.__fs.step(seconds)`, `teleport(x, z, yaw)`, `face(x, z)`, `lookAt(x, y, z)`, `act()`, `finishTasks()`, `info()` for draw calls and triangles, `ivmCheck()`, `quadCheck(x, y, z)`, `countFrames(ms)`, `visitor()`, `lattice()` (opacity, gazed node, marks, count, past counts), `nodeWorld(i)`, `ringVolume()`, `gaugeMarks()`, `selfTest()`, `vista()`, `sundown()`, `quake()` and `quakeState()`, `elk()`, `murrelets(callIn)`.
+- Field station: `window.__fs.step(seconds)`, `teleport(x, z, yaw)`, `face(x, z)`, `lookAt(x, y, z)`, `act()`, `finishTasks()`, `info()` for draw calls and triangles, `ivmCheck()`, `quadCheck(x, y, z)`, `countFrames(ms)`, `visitor()`, `lattice()` (opacity, gazed node, marks, count, past counts), `nodeWorld(i)`, `ringVolume()`, `gaugeMarks()`, `selfTest()`, `vista()`, `sundown()`, `quake()` and `quakeState()`, `elk()`, `murrelets(callIn)`, `autowalk(on)`, `mail()`, `car(callIn)`, `roadside()` (stumps, cleared trees, anything solid left on the asphalt), and `audioCheck(name, args, seconds, times)`.
+
+To check the sounds without hearing them, run `await __fs.audioCheck(...)` on the title screen, before Begin: it renders one `AU` method into an `OfflineAudioContext` and returns its RMS, peak and strongest frequency at the times you ask for. The tremor's rumble should sit below 100 Hz, a singing mast should show its three notes in turn, the bugle should rise to about 1.85 kHz and fall, the murrelet call should sit near 2.3 to 3.1 kHz.
 
 To try the tally: `step(9)` to let the lattice appear, then for four nodes `lookAt(...nodeWorld(i))`, `step(0.05)`, `act()`, and read `lattice()` after a few more seconds of `step`.
 
@@ -44,4 +46,4 @@ A hidden tab stops `requestAnimationFrame`, so drive time with `step()` and read
 ## Where the layout lives
 
 - Storybook: the beat is a 480 m loop (`LOOP`); places are listed in `ZONES`; objectives in `CUBES`, `MASTS`, `SLUGS`, `INSIG`.
-- Field station: the Ring sits at the origin and the beat circles it at `BEAT_R` (48 m); places are constants near the top (`HQ`, `LOOKOUT`, `POOL`, `LAMP`, `CREEK`, `TETPOOL`, `ALBINO`). The wonders are `IVM` (the stillness lattice), `TALLY_OBJ` and `updTally` (marks and counting), `VE`, `GAUGE_MARKS` and `GAUGE_FULL` (the Ring and its dial), the instrument rail in the HQ block, `VISTA` and `SUNDOWN` (the mountain and the red sun from Lookout Rise), `startQuake` and `updQuake` (the tremor and the singing masts), `ELK` and `updElk` (the herd in the lookout clearing), `MURRELETS`, and `ASH` with `veSolid`.
+- Field station: the Ring sits at the origin and the beat circles it at `BEAT_R` (48 m); places are constants near the top (`HQ`, `LOOKOUT`, `POOL`, `LAMP`, `CREEK`, `TETPOOL`, `ALBINO`). The wonders are `IVM` (the stillness lattice), `TALLY_OBJ` and `updTally` (marks and counting), `VE`, `GAUGE_MARKS` and `GAUGE_FULL` (the Ring and its dial), the instrument rail in the HQ block, `VISTA` and `SUNDOWN` (the mountain and the red sun from Lookout Rise), `startQuake` and `updQuake` (the tremor and the singing masts), `ELK` and `updElk` (the herd in the lookout clearing), `MURRELETS`, `ASH` with `veSolid`, `MAILBOX` with `openMail` and `updMail`, and `ROAD`, `ROAD_CURVE`, `roadDist`, `DINER_OBJ`, `DOT`, `CAR` with `updRoadside` (Highway 101 and the diner).

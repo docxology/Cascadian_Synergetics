@@ -42,6 +42,8 @@ The field station adds things that are never named:
 - Roosevelt elk graze the lookout clearing. They lift their heads when you come near and move off if you keep coming; the bull bugles.
 - Marbled murrelets cross overhead on their way in from the coast. You hear them first.
 - Ash drifts down over the station, each flake a tiny vector equilibrium.
+- The station's mailbox raises its flag now and then. Open it and the tetrahedron that lives inside eats the envelope and leaves a postcard.
+- Highway 101 runs along the grove's west edge, where the trees were cut long ago. Cars pass in the fog, lights first. The diner on the grove side has a neon sign, coffee and Dot, who has opinions about pie.
 - Sometimes a tall figure waits at the fog's edge, off to one side, after two wood knocks. Look straight at it and it is gone.
 - At the far edge of the grove there is a white redwood.
 
@@ -49,7 +51,7 @@ The field station adds things that are never named:
 
 | | Field station | Storybook |
 |---|---|---|
-| Walk | WASD or arrows; left thumb on a phone | WASD or arrows, or tap the ground |
+| Walk | WASD or arrows; R keeps walking on its own; left thumb on a phone | WASD or arrows, or tap the ground |
 | Look | Click the grove for mouse look (Esc releases), or drag; right thumb on a phone | |
 | Act | E, Space, click, or the button at the bottom; also marks a lattice node | E, Space, or the button at the bottom |
 | Notebook | L | L |
@@ -115,7 +117,7 @@ They also check the geometry, using the exact functions the field station runs, 
 - the Ring's dial reads 20, 5√2 φ² and 4 at the three stations and the convex hull between them
 - each flake of ash is a vector equilibrium closing 20 tetravolumes
 
-In a browser, both games expose a small test hook (`window.__oss` for the storybook, `window.__fs` for the field station) with `step`, `teleport` and checks such as `__fs.ivmCheck()`, which confirms every interior lattice node has twelve equal edges, `__fs.lattice()` for the gazed node, the marks and the count, `__fs.ringVolume()`, `__fs.selfTest()`, `__fs.vista()`, `__fs.sundown()`, `__fs.quake()`, `__fs.elk()` and `__fs.murrelets(true)`.
+In a browser, both games expose a small test hook (`window.__oss` for the storybook, `window.__fs` for the field station) with `step`, `teleport` and checks such as `__fs.ivmCheck()`, which confirms every interior lattice node has twelve equal edges, `__fs.lattice()` for the gazed node, the marks and the count, `__fs.ringVolume()`, `__fs.selfTest()`, `__fs.vista()`, `__fs.sundown()`, `__fs.quake()`, `__fs.elk()`, `__fs.murrelets(true)`, `__fs.mail()`, `__fs.car(true)`, `__fs.roadside()` and `await __fs.audioCheck(name, args, seconds, times)`, which renders one of the game's sounds offline and reports its loudness and strongest frequency at each given time.
 
 ## Editing and republishing
 

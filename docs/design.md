@@ -32,6 +32,8 @@ The Office of Synergetics Services gallery supplied scenes, not just objects:
 - clay archivists and a file-eating tetrahedron (the storybook's mailbox, and a radio bulletin)
 - a red sun over interlocking peaks (storybook, Lookout Rise); in the field station, the summit of Lookout Rise shows both a mountain with a lenticular cloud and, toward the sun, a red disc over folded ridges, while the high pale sun of the forest floor fades out
 - cuboctahedral ash over the station (both games)
+- clay archivists and a file-eating tetrahedron: in the field station, the tetrahedron lives in the station's mailbox, and the archivists send postcards
+- the diner on Highway 101, with pie
 - moonlit tensegrity roots in a flooded forest (the ghost forest's mast)
 - the fire lookout, the pins, coins, patches and ferry token
 
@@ -39,6 +41,6 @@ The Office of Synergetics Services gallery supplied scenes, not just objects:
 
 The field station carries code from two sibling projects, QuadCraft and QuadMath, and uses it where a ranger would: to address a node, to count a tetrahedron, to read the Ring, to check the station's instruments. The code is spliced in, not rewritten, and [imports.md](imports.md) explains how the copies are kept identical to upstream.
 
-## Not built yet
+## Access
 
-In the field station: the station's mailbox and its file-eating tetrahedron, and the diner on Highway 101.
+Hold-to-walk is hard on hands, so R keeps you walking until you press a movement key or meet a tree. Reduced motion turns off head bob, glitch flicker and the tremor's shake. The tally, the notebook and the postcards all carry text for screen readers through the polite live region.
