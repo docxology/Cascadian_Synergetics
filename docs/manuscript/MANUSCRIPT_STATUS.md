@@ -1,7 +1,8 @@
 # Manuscript status
 
-- **State:** released with the repository's 0.5.0, which carries the extended
-  paper (0.4.0 carried the first); renders through docxology/template with the render contract
+- **State:** released with the repository's 0.5.1, whose paper is 0.5.0's with
+  its two frames of the games captured by script (0.4.0 carried the first
+  paper); renders through docxology/template with the render contract
   passing (`scripts/check_render.py`).
 - **Numbers:** every number is a token computed by `tools/facts.mjs`; the one
   sourced fact (the month of the Cascadia earthquake, January 1700; the day is
@@ -22,16 +23,16 @@
 - **Bibliography:** every DOI resolved through doi.org when the entry was
   written; the gallery entry has no DOI and records its access date.
 - **Release:** `config.yaml` (`version`, `intended_version`, `release_status`
-  published) and the Discussion name release 0.5.0. Between releases, if the
+  published) and the Discussion name release 0.5.1. Between releases, if the
   paper describes work the changelog lists as unreleased, say so in the
   Discussion's last sentence. At the next release, reserve the new Zenodo
   version's DOI first, put it in `CITATION.cff` and `config.yaml` with the
   version bump, render, tag, then publish the Zenodo version with the tagged
   PDF and source.
-- **Archive:** release 0.5.0 is on Zenodo as doi:10.5281/zenodo.24511112, and 0.4.0 as
-  doi:10.5281/zenodo.24508085; the concept doi:10.5281/zenodo.24508082, printed on
-  the cover, resolves to the latest. Each archived PDF is the one attached to
-  that version's GitHub release.
+- **Archive:** release 0.5.1 is on Zenodo as doi:10.5281/zenodo.24511763, 0.5.0 as
+  doi:10.5281/zenodo.24511112 and 0.4.0 as doi:10.5281/zenodo.24508085; the concept
+  doi:10.5281/zenodo.24508082, printed on the cover, resolves to the latest.
+  Each archived PDF is the one attached to that version's GitHub release.
 - **Not covered:** behaviour visible only in a browser (drawing, sound,
   controls) is checked by hand through the games' test hooks, not by the local
   checks.
