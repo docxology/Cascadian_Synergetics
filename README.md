@@ -15,6 +15,8 @@ Each game is a single HTML file that needs nothing beyond fonts and, for the fie
 
 ## Play
 
+**In a browser.** GitHub Pages serves both games straight from this repository: the [landing page](https://docxology.github.io/Cascadian_Synergetics/), the [Cascadian Field Station](https://docxology.github.io/Cascadian_Synergetics/field-station/) and the [storybook patrol](https://docxology.github.io/Cascadian_Synergetics/storybook/). The field station needs WebGL and a network connection for Three.js.
+
 **Hosted as Claude artifacts.** The same files are published as [Cascadian Field Station](https://claude.ai/artifact/H96uDqtq776RDTxr9AWfiG) and the [storybook patrol](https://claude.ai/artifact/9tZNx7B6G3egbtkoinNyo6). They open for anyone the owner has shared them with.
 
 **Locally.** Serve the folder and open the landing page:
