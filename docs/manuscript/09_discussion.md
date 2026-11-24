@@ -34,6 +34,5 @@ is not known. Each of these is a place where the same discipline could reach
 further: a measurement the player can make, computed by code the tests already
 hold to its source, or a question put to players with the same care.
 
-The games and their geometry are those of release {{VERSION}}, archived with
-the paper as it then stood at <https://doi.org/{{VERSION_DOI}}>; the paper and
-its checks have been extended since, as the repository's changelog records.
+This paper describes release {{VERSION}} of the repository, archived with its
+source on Zenodo ([@sec:availability]).

@@ -1,7 +1,8 @@
 # Changelog
 
-## Unreleased
+## 0.5.0 (2026-11-24)
 
+- **Archived on Zenodo** as [doi:10.5281/zenodo.24511112](https://doi.org/10.5281/zenodo.24511112), a new version under the concept DOI the paper's cover prints; the DOI was reserved before the release, so this tag's `CITATION.cff` and paper already cite it.
 - **The paper, much extended.** A background section (synergetics and its units, quadrays, lattices and closest packing, the jitterbug and the A modules, play and learning, reproducible documents) with twenty-three new references, each resolved through its DOI or fetched from its page; a section on the one body of code behind the games and the paper, with a schema of the build; and an availability table of plain links for playing, reading and citing. The geometry is restated as eight numbered definitions and nine numbered propositions, each with its reason where the reason is short and its check in a new table, and every display equation is numbered. New figures draw the quadrays and the twelve neighbour moves, the cube and its corners, and the jitterbug's shapes above the gauge; the A-modules and denominator figures are redrawn; every caption says what is drawn and from which code.
 - **The abstract** is rewritten and ends with plain links to play both games, to the source and the imports, and to the Zenodo archive.
 - **Both games play on GitHub Pages** at https://docxology.github.io/Cascadian_Synergetics/, served from `main` with `.nojekyll`.

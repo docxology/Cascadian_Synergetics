@@ -9,13 +9,16 @@ authors:
 repository-code: "https://github.com/docxology/Cascadian_Synergetics"
 url: "https://docxology.github.io/Cascadian_Synergetics/"
 license: MIT
-version: 0.4.0
+version: 0.5.0
 date-released: 2026-11-24
-doi: 10.5281/zenodo.24508085
+doi: 10.5281/zenodo.24511112
 identifiers:
   - type: doi
+    value: 10.5281/zenodo.24511112
+    description: "Zenodo record of release 0.5.0: the paper and the source at tag v0.5.0"
+  - type: doi
     value: 10.5281/zenodo.24508085
-    description: "Zenodo record of release 0.4.0: the paper and the source at tag v0.4.0"
+    description: "Zenodo record of release 0.4.0, the first to carry the paper"
   - type: doi
     value: 10.5281/zenodo.24508082
     description: "Zenodo concept DOI: every archived release"

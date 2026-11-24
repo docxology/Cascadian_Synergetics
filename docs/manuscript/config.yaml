@@ -12,7 +12,7 @@
 paper:
   title: "Cascadian Synergetics"
   subtitle: "Synergetic Geometry, Shown and Checked, in Two Browser Games"
-  version: "0.4.0"
+  version: "0.5.0"
   date: ""  # left empty: the renderer stamps the build date
   cover:
     image: "../../output/figures/fig_cover.png"
@@ -31,11 +31,11 @@ authors:
 
 publication:
   release_status: "published"
-  intended_version: "0.4.0"
-  last_published_version: "0.4.0"
+  intended_version: "0.5.0"
+  last_published_version: "0.5.0"
   doi: "10.5281/zenodo.24508082"  # concept DOI, every archived release; the cover prints it
-  version_doi: "10.5281/zenodo.24508085"
-  version_record: "https://zenodo.org/records/24508085"
+  version_doi: "10.5281/zenodo.24511112"
+  version_record: "https://zenodo.org/records/24511112"
   github_repository: "docxology/Cascadian_Synergetics"
   repository_url: "https://github.com/docxology/Cascadian_Synergetics"
   journal: ""
