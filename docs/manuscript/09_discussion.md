@@ -26,8 +26,10 @@ equilibrium's volume.
 The games stop short in places. The jitterbug's breathing ends at the
 octahedron rather than going on to the tetrahedron. Nothing in the grove counts
 in A modules beyond the ants' tetrahedron, and the lattice is the only
-structure a player can measure. The screenshots in this paper are captured by
-hand, while the other figures are drawn from the code. And the games have not
+structure a player can measure. The two frames of the games in this paper are
+captured by a script rather than drawn from the series the other figures plot,
+so the checks hold them to the script's record but cannot take them again
+without a browser. And the games have not
 been played by anyone under study: whatever they teach, in the sense that
 Papert, Gee or Devlin would ask about [@papert1980; @gee2003; @devlin2011],
 is not known. Each of these is a place where the same discipline could reach

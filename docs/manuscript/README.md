@@ -42,5 +42,7 @@ tokens and hydrates the manuscript into `output/manuscript/`
 (`scripts/z_generate_manuscript_variables.py`), runs the template's render
 stage, checks the result (`scripts/check_render.py`) and records the PDF's digest
 beside the digest of its sources in `output/pdf/Cascadian_Synergetics_combined.json`.
+The two frames of the games are taken separately, by `node scripts/capture_screenshots.mjs`, which needs Chrome and a network connection and writes `docs/images/` with its record; take them again when a game changes what they show, then build.
+
 Commit the PDF and that record together with the sources they came from;
 `node tests/check.mjs` fails when they disagree.

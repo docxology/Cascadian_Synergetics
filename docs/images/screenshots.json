@@ -1,0 +1,109 @@
+{
+ "about": "Written by scripts/capture_screenshots.mjs; tests/check.mjs holds each image to its SHA-256 here.",
+ "shots": [
+  {
+   "file": "field-station-lookout.jpg",
+   "sha256": "6778d3b995406b13ddc1df4e173dd22674e4aabcf58bd21fd6c9dff054757950",
+   "shows": "From the top of Lookout Rise, the mountain over the fog under a lenticular cloud",
+   "page": "field-station/index.html",
+   "page_sha256": "f90777a8e0cd5ac2dd418622ba023f5bb362d41cd73015c6333d5415755ec1e9",
+   "viewport": {
+    "width": 1440,
+    "height": 900,
+    "scale": 1.5
+   },
+   "scene": {
+    "vista": {
+     "opacity": 0.683,
+     "seen": true,
+     "y": 13.99,
+     "at": [
+      123.2,
+      92,
+      -412.9
+     ]
+    },
+    "selfTest": "8 of 8"
+   }
+  },
+  {
+   "file": "storybook-lattice.jpg",
+   "sha256": "8f5f22e931270e2ae37e4e331aba1f2d1bccc7fffbc19476adf585921c643245",
+   "shows": "At the Cathedral Ring, four marked nodes of the stillness lattice span a unit tetrahedron",
+   "page": "storybook/index.html",
+   "page_sha256": "592678ed63885e76e7431b6688a8f1f77a391c61fde243062a7c70f64eb9c02d",
+   "viewport": {
+    "width": 1440,
+    "height": 900,
+    "scale": 1.5
+   },
+   "scene": {
+    "lattice": {
+     "opacity": 0.999,
+     "nodes": 123,
+     "node": null,
+     "marks": [
+      [
+       2,
+       0,
+       5,
+       5
+      ],
+      [
+       1,
+       0,
+       4,
+       3
+      ],
+      [
+       3,
+       0,
+       5,
+       4
+      ],
+      [
+       2,
+       0,
+       6,
+       4
+      ]
+     ],
+     "vol": {
+      "num": 1,
+      "den": 1
+     },
+     "shown": 1,
+     "tallies": [
+      "1"
+     ]
+    },
+    "marked": [
+     [
+      2,
+      0,
+      5,
+      5
+     ],
+     [
+      1,
+      0,
+      4,
+      3
+     ],
+     [
+      3,
+      0,
+      5,
+      4
+     ],
+     [
+      2,
+      0,
+      6,
+      4
+     ]
+    ]
+   }
+  }
+ ]
+}

@@ -16,8 +16,9 @@
   for a citation key.
 - **Figures:** seven drawn from the games' code (cover, the build schema, the
   quadrays and neighbour moves, the fixture's denominators, the cube, the
-  jitterbug's gauge with its shapes, the A modules) and two screenshots of the
-  games, captured by hand.
+  jitterbug's gauge with its shapes, the A modules) and two frames of the games,
+  2160 by 1350 pixels, captured by `scripts/capture_screenshots.mjs` through the
+  games' test hooks and held by the local checks to `docs/images/screenshots.json`.
 - **Bibliography:** every DOI resolved through doi.org when the entry was
   written; the gallery entry has no DOI and records its access date.
 - **Release:** `config.yaml` (`version`, `intended_version`, `release_status`

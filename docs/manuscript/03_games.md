@@ -30,7 +30,7 @@ cloud ([@fig:field-station]). A brass rail by the station door carries one bead
 for each of QuadCraft's {{QUADCRAFT_CHECKS}} geometric self-checks
 [@quadcraft], lit when the check passes as the station loads.
 
-![The field station from the top of Lookout Rise: a mountain stands up out of the fog under a lenticular cloud, and a ranger's lantern glows in the foreground. A screenshot of the game running in a browser.](../../output/figures/fig_field_station.jpg){#fig:field-station width=78%}
+![The field station from the top of Lookout Rise: a mountain stands up out of the fog under a lenticular cloud, the stays of a tensegrity mast cross the view, and a lantern glows in the foreground. A frame of the game, captured by script through its test hook ([@sec:unchecked]).](../../output/figures/fig_field_station.jpg){#fig:field-station width=86%}
 
 ## The storybook {#sec:storybook}
 
@@ -41,7 +41,7 @@ exactly {{SB_PERIODS}} lattice periods close around the loop, and the
 addresses never break where it joins. In the storybook a player taps a node to
 mark it ([@fig:storybook]).
 
-![The storybook at the Cathedral Ring. The stillness lattice glows around Patrol Trine, four marked nodes span a tetrahedron, and the brass counter reads the tetravolume of [@prop:ace]. The lattice's strut, {{SB_EDGE}} m, closes {{SB_PERIODS}} periods around the {{SB_LOOP}} m loop. A screenshot of the game.](../../output/figures/fig_storybook.jpg){#fig:storybook width=72%}
+![The storybook at the Cathedral Ring. The stillness lattice glows around Patrol Trine, four marked nodes span a tetrahedron, and the brass counter reads the tetravolume of [@prop:ace]; Sitka calls it whole. The lattice's strut, {{SB_EDGE}} m, closes {{SB_PERIODS}} periods around the {{SB_LOOP}} m loop. A frame of the game, captured by script through its test hook ([@sec:unchecked]).](../../output/figures/fig_storybook.jpg){#fig:storybook width=86%}
 
 ## What both games share {#sec:shared}
 

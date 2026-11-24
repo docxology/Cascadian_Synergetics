@@ -1,5 +1,9 @@
 # Changelog
 
+## Unreleased
+
+- **The paper's two frames of the games are captured by script.** `scripts/capture_screenshots.mjs` opens each standalone page in headless Chrome at 1440 by 900 at a scale of 1.5, seeds `Math.random` and stops the animation loop before the page's code runs, sets the scene through the page's test hook in fixed time steps (the view from Lookout Rise; four marked nodes at the Cathedral Ring), and writes `docs/images/` with `screenshots.json`, a record of each image's SHA-256 and the page it shows. `tests/check.mjs` holds the images to that record (75 checks). `npm run screenshots` runs it.
+
 ## 0.5.0 (2026-11-24)
 
 - **Archived on Zenodo** as [doi:10.5281/zenodo.24511112](https://doi.org/10.5281/zenodo.24511112), a new version under the concept DOI the paper's cover prints; the DOI was reserved before the release, so this tag's `CITATION.cff` and paper already cite it.

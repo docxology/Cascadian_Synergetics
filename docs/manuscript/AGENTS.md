@@ -22,6 +22,9 @@ These hold for every file in `docs/manuscript/` that the template renders.
 - **Figures are drawn from the code.** `scripts/make_figures.py` plots only what
   `node tools/facts.mjs --series` returns. Place a figure with a path from this
   folder, `../../output/figures/<name>`, and a `{#fig:...}` label.
+- **Screenshots are captured, never made by hand.** Take them with
+  `node scripts/capture_screenshots.mjs`, which writes `docs/images/` and its
+  record; change a scene by editing `SCENES` in that script, never an image.
 - **`config.yaml` is literal.** The template reads it without hydration, so it
   carries no tokens. Its `version` and `intended_version` equal `package.json`
   and `CITATION.cff`, and `release_status` is `unreleased` or `published`.

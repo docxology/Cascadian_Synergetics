@@ -14,7 +14,8 @@
     "fixtures": "python3 -I tools/quadmath_fixtures.py",
     "facts": "node tools/facts.mjs",
     "serve": "python3 -m http.server 8000",
-    "manuscript": "python3 scripts/build.py"
+    "manuscript": "python3 scripts/build.py",
+    "screenshots": "node scripts/capture_screenshots.mjs"
   },
   "engines": {
     "node": ">=20"

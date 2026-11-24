@@ -61,6 +61,7 @@ every push. The records the checks read and write are listed in
 | the vendor lock | the vendor script | each upstream commit, and each copied file's path and blob identifier | the tests, offline; the CI, against upstream clones |
 | QuadMath's fixture | the vendored QuadMath | named, random and lattice tetrahedra and integer determinants, with the blob identifiers they came from | the tests, against the lock and the port |
 | the PDF's stamp | the build script | the PDF's digest, its sources' digest and the template commit | the tests, by recomputing the sources' digest |
+| the screenshot record | the capture script | each frame's digest, the page it shows and that page's digest, the viewport and what the scene reported | the tests, against the images |
 | the CI receipt | the CI script | commit, tree, verdict, checks passed and failed, and the upstream check | kept outside the checkout, one per commit |
 
 : The records the checks rely on. {#tbl:records}
@@ -89,7 +90,14 @@ leaving a stale PDF in place.
 The checks run without a browser. What only a browser shows, the drawing, the
 sound and the feel of the controls, is exercised by hand through the test hooks
 each page exposes, which report the lattice, the marks and the count, the
-gauge's reading and the self-checks, among other things. The two screenshots
-are captured by hand, and the copies of the games hosted as Claude artifacts
-are published by hand from the same source files. No check, and no study, says
-what a player learns.
+gauge's reading and the self-checks, among other things. The two frames of the
+games in [@fig:field-station; @fig:storybook] are taken by a script,
+`scripts/capture_screenshots.mjs`, which opens each page in headless Chrome at
+a fixed size, seeds the page's random numbers and stops its animation loop
+before any of its code runs, sets the scene through the page's test hook in
+fixed time steps, and records each image's digest beside the digest of the page
+it shows. The checks hold the images to that record, but they cannot take the
+frames again, which needs a browser and the network; and a frame is the same
+from run to run without always being the same byte for byte. The copies of the
+games hosted as Claude artifacts are published by hand from the same source
+files. No check, and no study, says what a player learns.

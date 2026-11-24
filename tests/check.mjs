@@ -14,6 +14,8 @@ import { createRequire } from 'node:module';
 import { checkLocal, readLock } from '../tools/vendor.mjs';
 import { SPLICES, splicedPaths } from '../tools/build.mjs';
 import { TALLY_SAMPLES } from '../tools/facts.mjs';
+import { SCENES, RECORD } from '../scripts/capture_screenshots.mjs';
+import { createHash } from 'node:crypto';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const read = p => readFileSync(join(ROOT, p), 'utf8');
@@ -53,6 +55,18 @@ for (const file of ['src/storybook.html', 'src/field-station.html']) {
   ok(/^fresh: computed numbers in the docs \(\d+ facts\)$/m.test(out), `docs: every computed number is injected and current (${(out.match(/\((\d+) facts\)/) || [])[1] || 'stale or typed'} facts)${err && !/^fresh: computed/m.test(out) ? `\n${err}` : ''}`);
   ok(/^fresh: the manuscript states numbers only as tokens \(\d+ tokens\)$/m.test(out), `manuscript: every number is a token, every token known, every citation in references.bib and every entry cited${/^fresh: the manuscript/m.test(out) ? '' : `\n${err}`}`);
   ok(/^fresh: output\/pdf\/Cascadian_Synergetics_combined\.pdf was rendered from the current sources$/m.test(out), `manuscript: the tracked PDF matches its sources (python3 scripts/build.py re-renders)${/^fresh: output/m.test(out) ? '' : `\n${err}`}`);
+}
+
+/* The paper's screenshots are captured by scripts/capture_screenshots.mjs, never by hand: the record it writes must name
+   exactly its scenes, and each image must be the one it captured. A page changed since its capture is reported, not failed:
+   the screenshot then shows the page as it was, and re-running the capture brings it level. */
+{
+  const record = JSON.parse(read(RECORD)), digest = p => createHash('sha256').update(readFileSync(join(ROOT, p))).digest('hex');
+  const names = record.shots.map(s => s.file).sort().join(), wanted = SCENES.map(s => s.file).sort().join();
+  const bad = record.shots.filter(s => digest(`docs/images/${s.file}`) !== s.sha256).map(s => s.file);
+  ok(names === wanted && !bad.length, `screenshots: ${record.shots.length} images in docs/images are the ones the capture script took${bad.length ? ` (changed since: ${bad.join(', ')})` : names !== wanted ? ` (the record names ${names}, the script ${wanted})` : ''}`);
+  const moved = record.shots.filter(s => digest(s.page) !== s.page_sha256).map(s => s.page);
+  if (moved.length) console.log(`note  ${moved.join(', ')} changed since its screenshot was captured; node scripts/capture_screenshots.mjs takes it again`);
 }
 
 /* 2. Standalone pages are a fresh build of the sources */
