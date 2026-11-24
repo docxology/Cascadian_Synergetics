@@ -7,7 +7,7 @@ Two patrols through a fog-bound Cascadian redwood grove, where the Office of Syn
 | Cascadian Field Station | First person, 3D (Three.js r128) | [`src/field-station.html`](src/field-station.html) | [`field-station/`](field-station/) |
 | Office of Synergetics Services | Storybook, 2.5D (Canvas 2D) | [`src/storybook.html`](src/storybook.html) | [`storybook/`](storybook/) |
 
-Each game is a single HTML file that needs nothing beyond fonts and, for the field station, Three.js from cdnjs. The field station's coordinates, self-checks and counting come from two sibling projects, [QuadCraft](https://github.com/docxology/QuadCraft) and [QuadMath](https://github.com/docxology/QuadMath). Their code is spliced into the page byte for byte from `vendor/` and `lib/`, and tested against upstream; see [docs/imports.md](docs/imports.md).
+Each game is a single HTML file that needs nothing beyond fonts and, for the field station, Three.js from cdnjs. In both games the coordinates, self-checks and counting come from two sibling projects, [QuadCraft](https://github.com/docxology/QuadCraft) and [QuadMath](https://github.com/docxology/QuadMath). Their code is spliced into the page byte for byte from `vendor/` and `lib/`, and tested against upstream; see [docs/imports.md](docs/imports.md).
 
 ## Play
 
@@ -31,29 +31,28 @@ Patrol Trine is you, Ranger Sitka and Ranger Madrone. The grove has no briefing 
 - **Insignia.** Eight pins, coins and patches from the gallery lie on the forest floor. Found ones ride on the rangers' coats.
 - **The Cathedral Ring.** A Vector Equilibrium floats at the centre, stiff at first, with square gaps glitching. Each task lets it breathe further through its jitterbug. When the grove is whole it breathes all the way, and the view lifts into the canopy.
 
-The field station adds things that are never named:
+Both games carry things that are never named:
 
-- Stand still for a few seconds and the isotropic vector matrix appears around you, fixed to the world. Face one of its nodes and the action button shows the node's quadray address, counted out from the foot of the Ring.
-- Mark four nodes and the tetrahedron between them lights while a brass counter clicks out its volume. It always comes out whole, and the notebook keeps the counts.
-- Inside the Ring, the compass rim becomes a dial that follows the jitterbug's volume as it breathes.
+- Stand still for a few seconds and the isotropic vector matrix appears around you, fixed to the world. Each node has a whole quadray address, counted out from the foot of the Ring; the action button shows the one you would mark.
+- Mark four nodes and the tetrahedron between them lights while a brass counter clicks out its volume. It always comes out whole, and the notebook keeps the counts. In the field station you face a node; in the storybook you tap one, or press E for the node by your lantern.
+- At the Ring, a brass dial follows the jitterbug's volume as it breathes.
 - A brass rail by the station door carries eight beads, one for each of the station's self-checks, lit when the check passes.
-- From the top of Lookout Rise, a mountain stands up out of the fog with a lenticular cloud on its summit. Turn toward the sun and it is lower than it looks from the floor: red, over ridges folded into each other.
 - Every few minutes the ground hums. Re-tensioned masts ring their chords and slack ones rattle, and the radio reports in.
-- Roosevelt elk graze the lookout clearing. They lift their heads when you come near and move off if you keep coming; the bull bugles.
-- Marbled murrelets cross overhead on their way in from the coast. You hear them first.
-- Ash drifts down over the station, each flake a tiny vector equilibrium.
 - The station's mailbox raises its flag now and then. Open it and the tetrahedron that lives inside eats the envelope and leaves a postcard.
-- Highway 101 runs along the grove's west edge, where the trees were cut long ago. Cars pass in the fog, lights first. The diner on the grove side has a neon sign, coffee and Dot, who has opinions about pie.
-- Sometimes a tall figure waits at the fog's edge, off to one side, after two wood knocks. Look straight at it and it is gone.
-- At the far edge of the grove there is a white redwood.
+- Roosevelt elk graze in the fog, and the bull bugles. Marbled murrelets cross overhead on their way in from the coast. Ash drifts down over the station, each flake a tiny vector equilibrium.
+- From Lookout Rise, a lenticular cloud stands over the peaks and the sun is red.
+- Sometimes a tall figure waits at the fog's edge, off to one side, after two wood knocks. Turn to it and it is gone.
+- Somewhere in the grove there is a white redwood.
+
+The field station adds what a first-person view can give: the mountain standing up out of the fog from the summit of Lookout Rise, and Highway 101 along the grove's west edge, where cars pass in the fog lights first and Dot keeps the diner. The storybook keeps its own diner on 101, its salmon run, its ant crew and its flooded roots.
 
 ## Controls
 
 | | Field station | Storybook |
 |---|---|---|
-| Walk | WASD or arrows; R keeps walking on its own; left thumb on a phone | WASD or arrows, or tap the ground |
+| Walk | WASD or arrows; R keeps walking on its own; left thumb on a phone | WASD or arrows, or tap the ground; R keeps walking on its own |
 | Look | Click the grove for mouse look (Esc releases), or drag; right thumb on a phone | |
-| Act | E, Space, click, or the button at the bottom; also marks a lattice node | E, Space, or the button at the bottom |
+| Act | E, Space, click, or the button at the bottom; also marks a lattice node | E, Space, or the button at the bottom; tap a lattice node to mark it |
 | Notebook | L | L |
 | Sound | M | M |
 
@@ -66,6 +65,7 @@ field-station/             standalone field-station page, built from src/
 index.html                 landing page with both doors
 vendor/                    QuadCraft and QuadMath files, byte for byte, pinned in vendor.lock.json
 lib/tetravolume.js         QuadMath's exact 5x5 tetravolume and Bareiss determinant, ported to JavaScript
+lib/grove-geometry.js      the jitterbug, its volume, the lattice and its addresses, the ash: shared by both games
 tools/build.mjs            splices vendor/ and lib/ into src/, then builds the standalone pages
 tools/vendor.mjs           checks vendor/ against the lock (and upstream clones); refreshes it
 tools/quadmath_fixtures.py runs the vendored QuadMath to write tests/fixtures/quadmath.json

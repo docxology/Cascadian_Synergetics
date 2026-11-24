@@ -162,7 +162,7 @@ ok(TV.IVM_NEIGHBOR_MOVES.every(m => near(Math.hypot(...qcCart(m)), 2)), 'convent
 const block = path => src.match(new RegExp(`/\\* ==== splice ${path.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')} ==== \\*/\\n[\\s\\S]*?/\\* ==== end splice [^\\n]*`))[0];
 const fn = name => grab(new RegExp(`function ${name}\\([\\s\\S]*?\\n}\\n`), name);
 const game = {}; vm.createContext(game);
-vm.runInContext([...SPLICES['src/field-station.html'].map(block), fn('ivmLattice'), fn('latticeAddress'), fn('jitterVolume'), fn('jitterbug'), fn('veSolid'),
+vm.runInContext([...SPLICES['src/field-station.html'].map(block),
   'this.out = { ivmLattice, latticeAddress, jitterVolume, jitterbug, veSolid, aceTetravolumeExact, IVM_NEIGHBOR_MOVES };'].join('\n'), game);
 const G = game.out, EDGE = 2.4, LAT = G.ivmLattice(11, EDGE);
 const addr = LAT.nodes.map(p => G.latticeAddress(...p, EDGE));
@@ -202,6 +202,12 @@ ok(top.v > 20 && top.r > 1 / PHI && top.r < 1, `Ring gauge: the hull swells to $
   const edgesOK = tris.every(t => [[0, 1], [1, 2], [2, 0]].every(([a, b]) => { const l = dist(t[a], t[b]); return near(l, AE, 1e-12) || near(l, AE * Math.SQRT2, 1e-12); }));
   const V = tris.reduce((s, [a, b, c]) => s + Math.abs(det3(a, b, c)) / 6, 0) / (AE ** 3 / (6 * Math.SQRT2));
   ok(tris.length === 20 && edgesOK && near(V, 20, 1e-9), 'ash: each flake is a vector equilibrium, 8 triangles and 6 squares closing 20 tetravolumes');
+}
+{ // the storybook's lattice closes around its looping beat, so addresses never break where the loop joins
+  const sb = read('src/storybook.html'), env = {}; vm.createContext(env);
+  vm.runInContext([sb.match(/const LOOP = [^\n]*/)[0], sb.match(/const LAT_EDGE = [^\n]*/)[0], 'this.n = LOOP / (LAT_EDGE * Math.SQRT2); this.edge = LAT_EDGE;'].join('\n'), env);
+  const SL = G.ivmLattice(6.5, env.edge);
+  ok(near(env.n, Math.round(env.n), 1e-9) && SL.nodes.every(p => G.latticeAddress(...p, env.edge)), `storybook lattice: ${Math.round(env.n)} whole periods around the ${Math.round(env.n * env.edge * Math.SQRT2)} m loop, every node addressed`);
 }
 { // cube 3 again, now with quadrays and the 5x5 determinant: QuadCraft's basis tips are the game's TET_V
   const k = 1 / Math.SQRT2, q = p => { const r = QC.Quadray.fromCartesian(p[0] * k, p[1] * k, p[2] * k); return [r.a, r.b, r.c, r.d]; };

@@ -1,6 +1,6 @@
 # What the station borrows from QuadCraft and QuadMath
 
-The field station's coordinates, its self-checks and its counting come from two sibling projects in the same Synergetics suite. They arrive in two ways: QuadCraft's JavaScript is copied byte for byte, and a small piece of QuadMath's Python is ported to JavaScript and held to QuadMath's own answers.
+In both games the coordinates, the self-checks and the counting come from two sibling projects in the same Synergetics suite. They arrive in two ways: QuadCraft's JavaScript is copied byte for byte, and a small piece of QuadMath's Python is ported to JavaScript and held to QuadMath's own answers.
 
 | In the grove | Comes from | Arrives as |
 |---|---|---|
@@ -13,7 +13,7 @@ Both projects are by Daniel Ari Friedman under Apache-2.0; their licence texts a
 ## How the copies stay honest
 
 - **Pinned bytes.** [`vendor/vendor.lock.json`](../vendor/vendor.lock.json) names the upstream commit of each project and, for each file, its Git blob id. A blob id is the hash Git itself gives the file's bytes, so a copy matches upstream exactly when `git hash-object` here equals `git ls-tree <commit> <path>` there. `node tools/vendor.mjs` checks the copies offline; `node tools/vendor.mjs --upstream` also asks local clones of both projects whether the locked commits really hold those blobs.
-- **One file per artifact, one home per file.** A Claude artifact is a single page, so `tools/build.mjs` splices `quadray.js`, `synergetics.js` and `tetravolume.js` into `src/field-station.html` between `/* ==== splice … ==== */` markers, inside the game's own script. The checks fail if any block differs from its file by a byte. Edit the file, never the block.
+- **One file per artifact, one home per file.** A Claude artifact is a single page, so `tools/build.mjs` splices `quadray.js`, `synergetics.js`, `tetravolume.js` and the grove's own [`lib/grove-geometry.js`](../lib/grove-geometry.js) (the jitterbug, its volume, the lattice and its addresses, the ash) into both `src/field-station.html` and `src/storybook.html`, between `/* ==== splice … ==== */` markers inside each game's script. The checks fail if any block differs from its file by a byte. Edit the file, never the block.
 - **QuadMath answers, not ours.** [`tools/quadmath_fixtures.py`](../tools/quadmath_fixtures.py) loads the vendored Python and records its answers in [`tests/fixtures/quadmath.json`](../tests/fixtures/quadmath.json): five named tetrahedra, 120 with arbitrary integer quadrays, 120 built from IVM moves, and 60 integer determinants up to 6×6. The fixture records the blob ids it was computed from, and the checks refuse it if they no longer match the lock. The JavaScript port must reproduce every answer exactly.
 - **Local CI, upstream included.** `node tools/ci.mjs` runs everything on a clean export of a commit. When `../QuadCraft` and `../QuadMath` exist beside the checkout (the GitVault layout), it also runs the upstream check and records `verified`, `failed` or `skipped` in the receipt. A skipped upstream check is written as skipped, never as a pass.
 
@@ -27,7 +27,7 @@ Three ways of writing quadrays meet in this repository. The checks pin down how 
 
 **The compass.** The field station's compass uses four unit rays with the first pointing straight up, so three spread around the horizon. Its quadray of any point is √(3/2) times QuadCraft's quadray of the same point, after one fixed proper rotation, with the labels unchanged. The checks find that rotation and confirm the identity on 500 random points.
 
-The lattice needs no bridge at all. `ivmLattice` builds axis-aligned face-centred cubic points, which is QuadCraft's own frame: scale world metres by 2 ÷ (lattice edge) and every node's QuadCraft quadray is whole. Those whole quadrays are the addresses the tally prompt shows. The world's origin, at the foot of the Ring, is 0 · 0 · 0 · 0.
+The lattice needs no bridge at all. `ivmLattice` builds axis-aligned face-centred cubic points, which is QuadCraft's own frame: scale world metres by 2 ÷ (lattice edge) and every node's QuadCraft quadray is whole. Those whole quadrays are the addresses the tally prompt shows. In both games the origin, at the foot of the Ring, is 0 · 0 · 0 · 0. The storybook's world is a 480 m loop, so its lattice edge is 480 ÷ 140 ÷ √2 ≈ 2.42 m: exactly 140 lattice periods close around the loop, and the addresses never break where it joins.
 
 ## Why every count is whole
 

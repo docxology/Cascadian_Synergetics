@@ -107,6 +107,13 @@ body{margin:0;background:var(--mist);color:var(--ink);font-family:var(--font-bod
 .badge span{font-size:13.5px;line-height:1.2;min-width:0}
 .badge.locked{opacity:.45}
 .badge.locked svg{color:var(--ink-soft)}
+.tallies{display:flex;flex-wrap:wrap;gap:8px}
+.tallies span{font-family:var(--font-type);font-size:15px;min-width:36px;height:36px;padding:0 9px;box-sizing:border-box;border-radius:999px;display:inline-grid;place-items:center;background:rgba(246,192,104,.38);font-variant-numeric:tabular-nums}
+.tallies span.empty{background:rgba(255,255,255,.45);color:var(--ink-soft)}
+.lamps{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.lamps i{width:14px;height:14px;border-radius:50%;background:#bfe58a;box-shadow:0 0 9px rgba(191,229,138,.95)}
+.lamps i.out{background:var(--scarlet,#b8432f);box-shadow:none}
+.lamps span{font-family:var(--font-type);font-size:12px;letter-spacing:.08em;color:var(--ink-soft);margin-left:4px}
 .section-title{font-family:var(--font-type);font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-soft);margin:0 0 6px}
 .controls{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;font-size:15px}
 .controls dt{font-family:var(--font-type);font-size:13px;color:var(--ink-soft);padding-top:2px}
@@ -178,14 +185,18 @@ body{margin:0;background:var(--mist);color:var(--ink);font-family:var(--font-bod
     <div class="ledger-grid">
       <canvas id="map" width="760" height="560" role="img" aria-label="Hand-drawn map of the patrol beat as a ring, with what is still waiting marked"></canvas>
       <div><p class="section-title" id="insigTitle">On our coats</p><div class="insig" id="insig"></div></div>
+      <div><p class="section-title">Counted in the lattice</p><div class="tallies" id="tallies"></div></div>
+      <div><p class="section-title">Station instruments</p><div class="lamps" id="lamps"></div></div>
       <details class="howto"><summary>How to patrol</summary>
         <dl class="controls">
           <dt>Walk</dt><dd>WASD or arrow keys, or tap the ground. Hold Shift to hurry.</dd>
           <dt>Act</dt><dd>E, Space or Enter, or the button at the bottom. Tap a thing to walk to it.</dd>
+          <dt>Keep walking</dt><dd>R walks on by itself until you press a movement key, tap, or meet something.</dd>
+          <dt>Mark</dt><dd>Stand still until the lattice shows. Tap one of its nodes, or press E for the node by your lantern. Four marks are counted.</dd>
           <dt>Notebook</dt><dd>L. Sound: M. Close: Esc.</dd>
         </dl>
       </details>
-      <p class="fine">After the <a href="https://docs.superhuman.com/d/Math4Wisdom_d0SvdI3KSto/Office-of-Synergetics-Services_suFScEwl" target="_blank" rel="noopener">Office of Synergetics Services</a> pages in Math4Wisdom. Walk the same grove first-person at the <a href="https://claude.ai/artifact/H96uDqtq776RDTxr9AWfiG" target="_blank" rel="noopener">Cascadian Field Station</a>. Source code: <a href="https://github.com/docxology/Cascadian_Synergetics" target="_blank" rel="noopener">docxology/Cascadian_Synergetics</a>.</p>
+      <p class="fine">After the <a href="https://docs.superhuman.com/d/Math4Wisdom_d0SvdI3KSto/Office-of-Synergetics-Services_suFScEwl" target="_blank" rel="noopener">Office of Synergetics Services</a> pages in Math4Wisdom. Walk the same grove first-person at the <a href="https://claude.ai/artifact/H96uDqtq776RDTxr9AWfiG" target="_blank" rel="noopener">Cascadian Field Station</a>. Source code: <a href="https://github.com/docxology/Cascadian_Synergetics" target="_blank" rel="noopener">docxology/Cascadian_Synergetics</a>. The station's quadrays and self-checks are <a href="https://github.com/docxology/QuadCraft" target="_blank" rel="noopener">QuadCraft</a>'s, its counting is <a href="https://github.com/docxology/QuadMath" target="_blank" rel="noopener">QuadMath</a>'s.</p>
       <div class="actions">
         <button id="btnCloseLedger" class="hex primary" type="button"><span class="key">L</span>Back to the beat</button>
         <button id="btnReset" class="hex quiet" type="button">Start a fresh patrol</button>
@@ -204,6 +215,7 @@ body{margin:0;background:var(--mist);color:var(--ink);font-family:var(--font-bod
    ========================================================= */
 const TAU = Math.PI * 2;
 const LOOP = 480;                       // circumference of the patrol beat, metres; the world loops
+const LAT_EDGE = LOOP / 140 / Math.SQRT2; // the stillness lattice's edge: 140 whole periods close it around the loop
 const BAND_MIN = 11.5, BAND_MAX = 29.5; // walkable depth band, metres from the camera
 const CAMH = 4.6;                       // camera height, metres
 const REDUCED = !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches);
@@ -233,6 +245,663 @@ const C = {
 let fogC = C.mistA.slice();
 const fogAt = z => 1 - Math.exp(-z * 0.021);
 const fogged = (c, z, k = 1) => mix(c, fogC, clamp(fogAt(z) * k, 0, 1));
+/* for things that move or come and go; the grove's layout keeps the seeded R */
+const rand = (a, b) => a + (b - a) * Math.random();
+
+/* =========================================================
+   Instruments from the workshop: QuadCraft's Quadray and its synergetics checks (verbatim),
+   QuadMath's exact tetravolume (ported), and the grove's shared geometry. tools/build.mjs writes
+   these blocks from vendor/ and lib/; change those files, never the blocks.
+   ========================================================= */
+/* ==== splice vendor/quadcraft/quadray.js ==== */
+/**
+ * Quadray.js - 4D Tetrahedral Coordinate System
+ * Ported from QuadCraft's Quadray.h for the 4D Chess game.
+ * 
+ * Quadray coordinates (a, b, c, d) represent positions in tetrahedral space
+ * using four basis vectors emanating from the center of a regular tetrahedron.
+ * Adding a common offset to all four components leaves the point unchanged.
+ * Cartesian units give each coefficient-unit basis vector length sqrt(3/2).
+ */
+
+const ROOT2 = 1.4142135623730951;
+const S3 = 1.0606601717798212; // sqrt(9/8) for volume conversions
+
+/**
+ * Quadray class for 4D tetrahedral coordinates.
+ */
+class Quadray {
+    /**
+     * @param {number} a - First component
+     * @param {number} b - Second component
+     * @param {number} c - Third component
+     * @param {number} d - Fourth component
+     */
+    constructor(a = 0, b = 0, c = 0, d = 0) {
+        this.a = a;
+        this.b = b;
+        this.c = c;
+        this.d = d;
+    }
+
+    /**
+     * Create a copy of this Quadray.
+     * @returns {Quadray}
+     */
+    clone() {
+        return new Quadray(this.a, this.b, this.c, this.d);
+    }
+
+    /**
+     * Zero-minimum normalization: subtract the minimum component from all.
+     * Ensures at least one component is zero.
+     * @returns {Quadray} A new normalized Quadray
+     */
+    normalized() {
+        const minVal = Math.min(this.a, this.b, this.c, this.d);
+        return new Quadray(
+            this.a - minVal,
+            this.b - minVal,
+            this.c - minVal,
+            this.d - minVal
+        );
+    }
+
+    /**
+     * Convert Quadray to Cartesian (3D) coordinates.
+     * @returns {{x: number, y: number, z: number}}
+     */
+    toCartesian() {
+        const scale = 1.0 / ROOT2;
+        return {
+            x: scale * ((this.a - this.b) - (this.c - this.d)),
+            y: scale * ((this.a - this.b) + (this.c - this.d)),
+            z: scale * ((this.a - this.c) + (this.b - this.d))
+        };
+    }
+
+    /**
+     * Create a Quadray from Cartesian coordinates.
+     * @param {number} x
+     * @param {number} y
+     * @param {number} z
+     * @returns {Quadray}
+     */
+    static fromCartesian(x, y, z) {
+        const scale = 1.0 / ROOT2;
+        const a = scale * (Math.max(0, x) + Math.max(0, y) + Math.max(0, z));
+        const b = scale * (Math.max(0, -x) + Math.max(0, -y) + Math.max(0, z));
+        const c = scale * (Math.max(0, -x) + Math.max(0, y) + Math.max(0, -z));
+        const d = scale * (Math.max(0, x) + Math.max(0, -y) + Math.max(0, -z));
+        return new Quadray(a, b, c, d).normalized();
+    }
+
+    /**
+     * Euclidean length in Cartesian units, invariant under a common offset.
+     * @returns {number}
+     */
+    length() {
+        const ab = this.a - this.b;
+        const cd = this.c - this.d;
+        return Math.hypot((ab - cd) / ROOT2, (ab + cd) / ROOT2,
+            ((this.a - this.c) + (this.b - this.d)) / ROOT2);
+    }
+
+    /**
+     * Add another Quadray to this one.
+     * @param {Quadray} other
+     * @returns {Quadray} A new normalized Quadray
+     */
+    add(other) {
+        return new Quadray(
+            this.a + other.a,
+            this.b + other.b,
+            this.c + other.c,
+            this.d + other.d
+        ).normalized();
+    }
+
+    /**
+     * Subtract another Quadray from this one.
+     * @param {Quadray} other
+     * @returns {Quadray} A new Quadray (not normalized, for distance calculations)
+     */
+    subtract(other) {
+        return new Quadray(
+            this.a - other.a,
+            this.b - other.b,
+            this.c - other.c,
+            this.d - other.d
+        );
+    }
+
+    /**
+     * Scale this Quadray by a scalar.
+     * @param {number} scalar
+     * @returns {Quadray}
+     */
+    scale(scalar) {
+        return new Quadray(
+            this.a * scalar,
+            this.b * scalar,
+            this.c * scalar,
+            this.d * scalar
+        );
+    }
+
+    /**
+     * Round zero-minimum components to integers using Math.round (ties up).
+     * This gauge-invariant component snap is not an XYZ-nearest FCC search.
+     * @param {{a: number, b: number, c: number, d: number}} q
+     * @returns {Quadray} Canonical integer representative
+     */
+    static toIVM(q) {
+        const minVal = Math.min(q.a, q.b, q.c, q.d);
+        return new Quadray(
+            Math.round(q.a - minVal),
+            Math.round(q.b - minVal),
+            Math.round(q.c - minVal),
+            Math.round(q.d - minVal)
+        ).normalized();
+    }
+
+    /**
+     * Calculate 4D volume of a cell in IVM space.
+     * @returns {number}
+     */
+    static cellVolume() {
+        // Per-cell IVM volume in tetravolumes = (1/√2)^3 × S3 ≈ 0.375, where
+        // S3 = sqrt(9/8) is the XYZ→IVM volume-conversion constant (see the
+        // `S3` constant above). Verified: Math.pow(1/Math.sqrt(2), 3) * S3
+        // === 0.375. (The previously-noted "S3^3 / sqrt(8)" derivation is
+        // WRONG — it evaluates to ≈0.421875, not 0.375.) This derivation is
+        // corroborated by `4d_doom/js/doom_config.js` (IVM.CELL_TETRAVOLUME)
+        // and `4d_minecraft/js/minecraft_analysis.js` (perBlockTetravolume),
+        // which both compute the same formula independently.
+        return 0.375;
+    }
+
+    /**
+     * Determine IVM cell type (tetra vs octa) based on coordinate parity.
+     * @param {number} a 
+     * @param {number} b 
+     * @param {number} c 
+     * @param {number} d 
+     * @returns {'tetra'|'octa'}
+     */
+    static cellType(a, b, c, d) {
+        const sum = Math.round(a) + Math.round(b) + Math.round(c) + Math.round(d);
+        return sum % 2 === 0 ? 'tetra' : 'octa';
+    }
+
+    /**
+     * Euclidean distance in Cartesian units; accepts structural records.
+     * @param {{a: number, b: number, c: number, d: number}} q1
+     * @param {{a: number, b: number, c: number, d: number}} q2
+     * @returns {number}
+     */
+    static distance(q1, q2) {
+        const ab = (q1.a - q1.b) - (q2.a - q2.b);
+        const cd = (q1.c - q1.d) - (q2.c - q2.d);
+        const ac = (q1.a - q1.c) - (q2.a - q2.c);
+        const bd = (q1.b - q1.d) - (q2.b - q2.d);
+        return Math.hypot((ab - cd) / ROOT2, (ab + cd) / ROOT2,
+            (ac + bd) / ROOT2);
+    }
+
+    /**
+     * Instance method for distance.
+     * @param {Quadray} other
+     * @returns {number}
+     */
+    distanceTo(other) {
+        return Quadray.distance(this, other);
+    }
+
+    /**
+     * Check equality (after normalization).
+     * @param {Quadray} other
+     * @param {number} epsilon - Tolerance for floating-point comparison
+     * @returns {boolean}
+     */
+    equals(other, epsilon = 0.0001) {
+        const n1 = this.normalized();
+        const n2 = other.normalized();
+        return (
+            Math.abs(n1.a - n2.a) < epsilon &&
+            Math.abs(n1.b - n2.b) < epsilon &&
+            Math.abs(n1.c - n2.c) < epsilon &&
+            Math.abs(n1.d - n2.d) < epsilon
+        );
+    }
+
+    /**
+     * String representation.
+     * @returns {string}
+     */
+    toString() {
+        return `Quadray(${this.a.toFixed(2)}, ${this.b.toFixed(2)}, ${this.c.toFixed(2)}, ${this.d.toFixed(2)})`;
+    }
+
+    /**
+     * Hash key for use in Maps/Sets (uses normalized integer coords).
+     * @returns {string}
+     */
+    toKey() {
+        const n = this.normalized();
+        return `${Math.round(n.a)},${Math.round(n.b)},${Math.round(n.c)},${Math.round(n.d)}`;
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Basis Vectors (Unit Steps in 4D)
+// These are the fundamental movement directions in Quadray Chess.
+// ═══════════════════════════════════════════════════════════════════════════
+
+/** Unit step in the +a direction */
+Quadray.A = new Quadray(1, 0, 0, 0);
+/** Unit step in the +b direction */
+Quadray.B = new Quadray(0, 1, 0, 0);
+/** Unit step in the +c direction */
+Quadray.C = new Quadray(0, 0, 1, 0);
+/** Unit step in the +d direction */
+Quadray.D = new Quadray(0, 0, 0, 1);
+
+/** All four basis directions */
+Quadray.BASIS = [Quadray.A, Quadray.B, Quadray.C, Quadray.D];
+
+/** Origin */
+Quadray.ORIGIN = new Quadray(0, 0, 0, 0);
+
+/**
+ * IVM_DIRECTIONS: the 8 signed unit-basis steps (±1 on exactly one of a/b/c/d).
+ * This is NOT the synergetics "twelve around one" closest-packing neighbor
+ * set (12 permutations of (0,1,1,2)) — that set lives at
+ * `GridUtils.DIRECTIONS` in grid_utils.js and is what every game's neighbor
+ * lookup / grid traversal actually uses. {±1,0,0,0} has exactly 8
+ * permutations, never 12, so there is no version of this constant that could
+ * hold 12 entries; nothing in this repo calls `Quadray.IVM_DIRECTIONS` for
+ * game logic (verified via grep across games/ on 2026-07-07) — the sole
+ * consumer is `4d_doom/tests/test_doom.js`, which pins its length to 8.
+ * Kept for that reason; prefer `GridUtils.DIRECTIONS` for any new code.
+ */
+Quadray.IVM_DIRECTIONS = [
+    new Quadray(1, 0, 0, 0), new Quadray(-1, 0, 0, 0),
+    new Quadray(0, 1, 0, 0), new Quadray(0, -1, 0, 0),
+    new Quadray(0, 0, 1, 0), new Quadray(0, 0, -1, 0),
+    new Quadray(0, 0, 0, 1), new Quadray(0, 0, 0, -1)
+];
+
+// Export for use in other modules
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { Quadray, ROOT2, S3 };
+}
+/* ==== end splice vendor/quadcraft/quadray.js ==== */
+/* ==== splice vendor/quadcraft/synergetics.js ==== */
+/**
+ * synergetics.js - Core Synergetics constants and verification
+ *
+ * Extracted from minecraft_analysis.js for shared use across all QuadCraft games.
+ * Provides Fuller's Synergetics geometry verification suite.
+ *
+ * In browser: load quadray.js before this file via script tags.
+ * In Node.js: Quadray is loaded automatically via require.
+ */
+
+// Node.js compatibility: load Quadray if not already in scope
+// NOTE: Do NOT use `var` here — it conflicts with `const ROOT2`/`const S3`
+// from quadray.js when loaded via <script> tags in browsers.
+if (typeof Quadray === 'undefined' && typeof require !== 'undefined') {
+    const _q = require('./quadray.js');
+    globalThis.Quadray = _q.Quadray;
+    globalThis.ROOT2 = _q.ROOT2;
+    globalThis.S3 = _q.S3;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SYNERGETICS CONSTANTS
+// ═══════════════════════════════════════════════════════════════════════════
+
+const SYNERGETICS = {
+    ROOT2: 1.4142135623730951,
+    S3: 1.0606601717798212, // sqrt(9/8) — XYZ-to-IVM volume conversion
+    TETRAHEDRAL_ANGLE: 109.4712, // degrees between any two basis vectors
+    BASIS_LENGTH: Math.sqrt(3 / 2), // Cartesian norm of a coefficient-unit basis
+
+    // Synergetics volume ratios (tetravolumes)
+    TETRA_VOL: 1,
+    OCTA_VOL: 4,
+    CUBO_VOL: 20
+};
+
+// ═══════════════════════════════════════════════════════════════════════════
+// GEOMETRY FUNCTIONS
+// ═══════════════════════════════════════════════════════════════════════════
+
+/**
+ * Calculate the angle between two Quadray vectors (in degrees).
+ * @param {Quadray} q1
+ * @param {Quadray} q2
+ * @returns {number} Angle in degrees
+ */
+function angleBetweenQuadrays(q1, q2) {
+    const c1 = q1.toCartesian();
+    const c2 = q2.toCartesian();
+    const dot = c1.x * c2.x + c1.y * c2.y + c1.z * c2.z;
+    const mag1 = Math.sqrt(c1.x ** 2 + c1.y ** 2 + c1.z ** 2);
+    const mag2 = Math.sqrt(c2.x ** 2 + c2.y ** 2 + c2.z ** 2);
+    if (mag1 === 0 || mag2 === 0) return 0;
+    const cosAngle = Math.max(-1, Math.min(1, dot / (mag1 * mag2)));
+    return Math.acos(cosAngle) * (180 / Math.PI);
+}
+
+/**
+ * Verify round-trip conversion (Quadray -> Cartesian -> Quadray).
+ * @param {Quadray} q
+ * @param {number} tolerance
+ * @returns {{passed: boolean, error: number, original: Quadray, recovered: Quadray}}
+ */
+function verifyRoundTrip(q, tolerance = 0.01) {
+    const cart = q.toCartesian();
+    const recovered = Quadray.fromCartesian(cart.x, cart.y, cart.z);
+    const error = Quadray.distance(q.normalized(), recovered.normalized());
+    return { passed: error < tolerance, error, original: q, recovered };
+}
+
+/**
+ * Comprehensive geometric identity verification — 8 checks.
+ * @returns {{timestamp: string, checks: Array, allPassed: boolean}}
+ */
+function verifyGeometricIdentities() {
+    const TOLERANCE = 0.01;
+
+    const results = {
+        timestamp: new Date().toISOString(),
+        checks: [],
+        allPassed: true
+    };
+
+    function addCheck(check) {
+        results.checks.push(check);
+        if (!check.passed) results.allPassed = false;
+    }
+
+    // 1. Basis vector Cartesian lengths = sqrt(3/2)
+    const basisLengths = Quadray.BASIS.map(b => b.length());
+    addCheck({
+        name: 'Basis Vector Lengths',
+        description: 'All 4 basis vectors should have equal Cartesian length sqrt(3/2)',
+        expected: SYNERGETICS.BASIS_LENGTH.toFixed(4),
+        actual: basisLengths.map(l => l.toFixed(4)),
+        passed: basisLengths.every(l => Math.abs(l - SYNERGETICS.BASIS_LENGTH) < TOLERANCE)
+    });
+
+    // 2. Tetrahedral angles = 109.47 deg (all 6 pairs)
+    const anglePairs = [];
+    const labels = ['A', 'B', 'C', 'D'];
+    for (let i = 0; i < 4; i++) {
+        for (let j = i + 1; j < 4; j++) {
+            const angle = angleBetweenQuadrays(Quadray.BASIS[i], Quadray.BASIS[j]);
+            anglePairs.push({ pair: `${labels[i]}-${labels[j]}`, angle: angle.toFixed(2) });
+        }
+    }
+    addCheck({
+        name: 'Tetrahedral Symmetry',
+        description: `All basis pairs should form ${SYNERGETICS.TETRAHEDRAL_ANGLE.toFixed(2)}° angles`,
+        expected: SYNERGETICS.TETRAHEDRAL_ANGLE.toFixed(2),
+        actual: anglePairs,
+        passed: anglePairs.every(p => Math.abs(parseFloat(p.angle) - SYNERGETICS.TETRAHEDRAL_ANGLE) < 1.0)
+    });
+
+    // 3. Origin identity (0,0,0,0) -> (0,0,0)
+    const originCart = Quadray.ORIGIN.toCartesian();
+    addCheck({
+        name: 'Origin Identity',
+        description: 'Quadray origin (0,0,0,0) maps to Cartesian origin (0,0,0)',
+        expected: '{x: 0, y: 0, z: 0}',
+        actual: `{x: ${originCart.x.toFixed(4)}, y: ${originCart.y.toFixed(4)}, z: ${originCart.z.toFixed(4)}}`,
+        passed: Math.abs(originCart.x) < TOLERANCE && Math.abs(originCart.y) < TOLERANCE && Math.abs(originCart.z) < TOLERANCE
+    });
+
+    // 4. Round-trip conversion (6 test points, error < 0.01)
+    const testPoints = [
+        new Quadray(1, 0, 0, 0), new Quadray(0, 1, 0, 0),
+        new Quadray(0, 0, 1, 0), new Quadray(0, 0, 0, 1),
+        new Quadray(2, 1, 0, 1), new Quadray(3, 2, 1, 0)
+    ];
+    const roundTripResults = testPoints.map(q => verifyRoundTrip(q));
+    addCheck({
+        name: 'Round-Trip Conversion',
+        description: 'Quadray -> Cartesian -> Quadray recovers original position',
+        expected: 'error < 0.01 for all test points',
+        actual: roundTripResults.map((r, i) => `Point ${i + 1}: error=${r.error.toFixed(4)}`),
+        passed: roundTripResults.every(r => r.passed)
+    });
+
+    // 5. Distance symmetry d(A,B) = d(B,A)
+    const qA = new Quadray(1, 0, 0, 0);
+    const qB = new Quadray(0, 1, 0, 0);
+    const d1 = Quadray.distance(qA, qB);
+    const d2 = Quadray.distance(qB, qA);
+    addCheck({
+        name: 'Distance Symmetry',
+        description: 'distance(A, B) equals distance(B, A)',
+        expected: 'd1 === d2',
+        actual: `d1=${d1.toFixed(6)}, d2=${d2.toFixed(6)}`,
+        passed: Math.abs(d1 - d2) < 0.0001
+    });
+
+    // 6. Triangle inequality d(A,B)+d(B,C) >= d(A,C)
+    const qC = new Quadray(0, 0, 1, 0);
+    const dAB = Quadray.distance(qA, qB);
+    const dBC = Quadray.distance(qB, qC);
+    const dAC = Quadray.distance(qA, qC);
+    addCheck({
+        name: 'Triangle Inequality',
+        description: 'd(A,B) + d(B,C) >= d(A,C) for all points',
+        expected: `${dAB.toFixed(4)} + ${dBC.toFixed(4)} >= ${dAC.toFixed(4)}`,
+        actual: `${(dAB + dBC).toFixed(4)} >= ${dAC.toFixed(4)}`,
+        passed: dAB + dBC >= dAC - TOLERANCE
+    });
+
+    // 7. S3 constant validation — S3 = sqrt(9/8)
+    const expectedS3 = Math.sqrt(9 / 8);
+    addCheck({
+        name: 'S3 Constant Validation',
+        description: 'S3 = sqrt(9/8) = 1.0607 (XYZ-to-IVM volume conversion)',
+        expected: expectedS3.toFixed(6),
+        actual: SYNERGETICS.S3.toFixed(6),
+        passed: Math.abs(SYNERGETICS.S3 - expectedS3) < 0.0001
+    });
+
+    // 8. Synergetics volume ratios — Tetra:Octa:Cubo = 1:4:20
+    addCheck({
+        name: 'Synergetics Volume Ratios',
+        description: 'Tetra:Octa:Cubo = 1:4:20 in tetravolumes',
+        expected: 'T:O:C = 1:4:20',
+        actual: `T:O:C = ${SYNERGETICS.TETRA_VOL}:${SYNERGETICS.OCTA_VOL}:${SYNERGETICS.CUBO_VOL}`,
+        passed: SYNERGETICS.OCTA_VOL / SYNERGETICS.TETRA_VOL === 4 && SYNERGETICS.CUBO_VOL / SYNERGETICS.TETRA_VOL === 20
+    });
+
+    return results;
+}
+
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { SYNERGETICS, angleBetweenQuadrays, verifyRoundTrip, verifyGeometricIdentities };
+}
+/* ==== end splice vendor/quadcraft/synergetics.js ==== */
+/* ==== splice lib/tetravolume.js ==== */
+/**
+ * tetravolume.js - exact tetravolumes on the isotropic vector matrix
+ *
+ * A JavaScript port of three pieces of QuadMath (https://github.com/docxology/QuadMath,
+ * Apache-2.0), commit 6e1f004, whose Python sources are vendored in vendor/quadmath/:
+ *
+ *   bareissDeterminant    <- bareiss_determinant_int  src/quadmath/core/linalg_utils.py
+ *   aceTetravolumeExact   <- ace_tetravolume_5x5       src/quadmath/core/quadray.py
+ *   IVM_NEIGHBOR_MOVES    <- IVM_NEIGHBOR_MOVES        src/quadmath/core/quadray.py
+ *
+ * tests/check.mjs holds the port to answers that the vendored Python computed
+ * (tests/fixtures/quadmath.json). aceTetravolume is a floating-point companion for
+ * real-valued quadrays; it is not part of QuadMath and is not exact.
+ *
+ * Quadrays may be [a, b, c, d] arrays or objects with a, b, c, d fields (QuadCraft's Quadray).
+ * tools/build.mjs splices this file, unchanged, into src/field-station.html.
+ */
+
+function quadrayComponents(q) {
+    return Array.isArray(q) ? q : [q.a, q.b, q.c, q.d];
+}
+
+/**
+ * Exact integer determinant by Bareiss's fraction-free elimination, with the same
+ * partial pivoting as QuadMath. Takes integers (numbers or BigInt), returns a BigInt.
+ * BigInt() refuses a non-integer entry, so floats never reach the exact path.
+ */
+function bareissDeterminant(matrix) {
+    const n = matrix.length;
+    if (n === 0) return 1n;
+    for (const row of matrix) {
+        if (row.length !== n) throw new Error('Matrix must be square');
+    }
+    const a = matrix.map(row => row.map(v => BigInt(v)));
+    let denom = 1n;
+    let sign = 1n;
+    for (let k = 0; k < n - 1; k++) {
+        if (a[k][k] === 0n) {
+            let pivotRow = -1;
+            for (let r = k + 1; r < n; r++) {
+                if (a[r][k] !== 0n) { pivotRow = r; break; }
+            }
+            if (pivotRow < 0) return 0n;
+            [a[k], a[pivotRow]] = [a[pivotRow], a[k]];
+            sign = -sign;
+        }
+        const pivot = a[k][k];
+        for (let i = k + 1; i < n; i++) {
+            for (let j = k + 1; j < n; j++) {
+                let num = a[i][j] * pivot - a[i][k] * a[k][j];
+                // Exact: denom divides num whenever the inputs are integers, so truncating
+                // BigInt division agrees with Python's floor division here.
+                if (denom !== 1n) num /= denom;
+                a[i][j] = num;
+            }
+        }
+        denom = pivot;
+    }
+    return sign * a[n - 1][n - 1];
+}
+
+/** Tom Ace's 5x5 matrix: one row [a, b, c, d, 1] per vertex, then [1, 1, 1, 1, 0]. */
+function aceMatrix(p0, p1, p2, p3) {
+    return [p0, p1, p2, p3].map(p => [...quadrayComponents(p), 1]).concat([[1, 1, 1, 1, 0]]);
+}
+
+/**
+ * Tetravolume = |det(Ace matrix)| / 4, exact for integer quadrays, as a reduced
+ * fraction [numerator, denominator] of BigInts. The unit IVM tetrahedron (the origin
+ * and three neighbour moves) is [1n, 1n]; the primitive one (the origin and three
+ * basis tips) is [1n, 4n].
+ */
+function aceTetravolumeExact(p0, p1, p2, p3) {
+    let num = bareissDeterminant(aceMatrix(p0, p1, p2, p3));
+    if (num < 0n) num = -num;
+    let x = num, y = 4n;
+    while (y) [x, y] = [y, x % y];
+    return [num / x, 4n / x];
+}
+
+/** The same 5x5 determinant in floating point, for real-valued quadrays. Not exact. */
+function aceTetravolume(p0, p1, p2, p3) {
+    const m = aceMatrix(p0, p1, p2, p3);
+    let det = 1;
+    for (let k = 0; k < 5; k++) {
+        let piv = k;
+        for (let r = k + 1; r < 5; r++) if (Math.abs(m[r][k]) > Math.abs(m[piv][k])) piv = r;
+        if (m[piv][k] === 0) return 0;
+        if (piv !== k) { [m[k], m[piv]] = [m[piv], m[k]]; det = -det; }
+        det *= m[k][k];
+        for (let i = k + 1; i < 5; i++) {
+            const f = m[i][k] / m[k][k];
+            for (let j = k; j < 5; j++) m[i][j] -= f * m[k][j];
+        }
+    }
+    return Math.abs(det) / 4;
+}
+
+/** The 12 IVM neighbour moves: the distinct permutations of (2, 1, 1, 0), sorted. */
+const IVM_NEIGHBOR_MOVES = (() => {
+    const out = new Set();
+    const permute = (rest, acc) => {
+        if (!rest.length) { out.add(acc.join(',')); return; }
+        rest.forEach((v, i) => permute(rest.filter((_, j) => j !== i), acc.concat(v)));
+    };
+    permute([2, 1, 1, 0], []);
+    return [...out].sort().map(s => s.split(',').map(Number));
+})();
+
+if (typeof module !== 'undefined' && module.exports) {
+    module.exports = { bareissDeterminant, aceMatrix, aceTetravolumeExact, aceTetravolume, IVM_NEIGHBOR_MOVES };
+}
+/* ==== end splice lib/tetravolume.js ==== */
+/* ==== splice lib/grove-geometry.js ==== */
+/**
+ * grove-geometry.js - the synergetic geometry both games draw, kept in one place
+ *
+ *   jitterbug(r, E)              the eight triangles and six squares of the jitterbug at a/b = r, edge E
+ *   jitterVolume(J, E)           its volume in tetravolumes of a tetrahedron with edge E
+ *   ivmLattice(radius, edge)     isotropic vector matrix nodes and struts within a radius
+ *   latticeAddress(x, y, z, e)   a node's whole quadray address in QuadCraft's convention
+ *   veSolid(E)                   a vector equilibrium as twenty triangles, for the ash
+ *
+ * Needs QuadCraft's Quadray (vendor/quadcraft/quadray.js) and aceTetravolume (lib/tetravolume.js)
+ * spliced before it. tools/build.mjs splices this file, unchanged, into both games.
+ */
+/* jitterbug: cyclic permutations of (0, ±a, ±b); a = b is the vector equilibrium, a/b = 1/phi the icosahedron, a = 0 the octahedron */
+function jitterbug(r, E){
+  const a = r, b = 1, e = Math.sqrt(a * a + b * b + (a - b) * (a - b)), k = E / e, tris = [];
+  for (const sx of [1, -1]) for (const sy of [1, -1]) for (const sz of [1, -1]) tris.push([[0, sy * a * k, sz * b * k], [sx * b * k, 0, sz * a * k], [sx * a * k, sy * b * k, 0]]);
+  const cyc = v => [v[2], v[0], v[1]], squares = [];
+  for (const s of [1, -1]){ let q = [[s * b * k, 0, a * k], [s * a * k, b * k, 0], [s * b * k, 0, -a * k], [s * a * k, -b * k, 0]]; squares.push(q); q = q.map(cyc); squares.push(q); q = q.map(cyc); squares.push(q); }
+  return { tris, squares };
+}
+/* isotropic vector matrix: face-centred cubic points, every node joined to its twelve neighbours by equal edges.
+   Axis-aligned like this, it sits in QuadCraft's own frame: scale by 2 / edge and every node's quadray is whole. */
+function ivmLattice(radius, edge){
+  const s = edge / Math.SQRT2, n = Math.ceil(radius / s) + 1, nodes = [], edges = [];
+  const inside = (i, j, k) => Math.hypot(i * s, j * s, k * s) <= radius;
+  const NB = [[1, 1, 0], [1, -1, 0], [1, 0, 1], [1, 0, -1], [0, 1, 1], [0, 1, -1]];
+  for (let i = -n; i <= n; i++) for (let j = -n; j <= n; j++) for (let k = -n; k <= n; k++){
+    if ((((i + j + k) % 2) + 2) % 2 || !inside(i, j, k)) continue;
+    nodes.push([i * s, j * s, k * s]);
+    for (const d of NB){ const a = i + d[0], b = j + d[1], cc = k + d[2]; if (inside(a, b, cc)) edges.push([[i * s, j * s, k * s], [a * s, b * s, cc * s]]); }
+  }
+  return { nodes, edges, s };
+}
+/* a node's address: its quadray in QuadCraft's convention, one lattice edge being two units, measured from the lattice's origin (each game puts it at the foot of the Ring) */
+function latticeAddress(x, y, z, edge){
+  const k = 2 / edge, q = Quadray.fromCartesian(x * k, y * k, z * k), a = [q.a, q.b, q.c, q.d], r = a.map(Math.round);
+  return a.every((v, i) => Math.abs(v - r[i]) < 1e-6) ? r : null;
+}
+/* the jitterbug's volume in tetravolumes of a tetrahedron with its own edge: cones from the centre to the eight
+   triangles and to the six squares, each square folded on its shorter diagonal, each cone counted by the 5x5 determinant */
+function jitterVolume(J, E){
+  const k = 2 / E, o = [0, 0, 0, 0], d = (p, q) => Math.hypot(p[0] - q[0], p[1] - q[1], p[2] - q[2]);
+  const qOf = v => { const q = Quadray.fromCartesian(v[0] * k, v[1] * k, v[2] * k); return [q.a, q.b, q.c, q.d]; };
+  let V = 0; const cone = (a, b, c) => { V += aceTetravolume(o, qOf(a), qOf(b), qOf(c)); };
+  for (const t of J.tris) cone(t[0], t[1], t[2]);
+  for (const q of J.squares){ if (d(q[0], q[2]) <= d(q[1], q[3])){ cone(q[0], q[1], q[2]); cone(q[0], q[2], q[3]); } else { cone(q[1], q[2], q[3]); cone(q[1], q[3], q[0]); } }
+  return V;
+}
+/* a vector equilibrium as twenty triangles: the shape of each flake of ash over the station */
+function veSolid(E){
+  const J = jitterbug(1, E), pos = [];
+  for (const t of J.tris) for (const v of t) pos.push(...v);
+  for (const q of J.squares) for (const [a, b, c] of [[0, 1, 2], [0, 2, 3]]) pos.push(...q[a], ...q[b], ...q[c]);
+  return pos;
+}
+/* ==== end splice lib/grove-geometry.js ==== */
+const SELFTEST = verifyGeometricIdentities();
 
 /* =========================================================
    Canvas + projection. Camera at z = 0 looking down +z; x wraps.
@@ -451,19 +1120,6 @@ const MAST_GEO = (() => {
 
 /* Jitterbug: vertices are cyclic permutations of (0, ±a, ±b). a = b gives the vector equilibrium,
    a/b = 1/phi the icosahedron, a = 0 the octahedron. The eight triangles stay rigid and equilateral. */
-function jitterbug(r, E){
-  const a = r, b = 1, e = Math.sqrt(a * a + b * b + (a - b) * (a - b)), k = E / e;
-  const tris = [];
-  for (const sx of [1, -1]) for (const sy of [1, -1]) for (const sz of [1, -1])
-    tris.push([[0, sy * a * k, sz * b * k], [sx * b * k, 0, sz * a * k], [sx * a * k, sy * b * k, 0]]);
-  const cyc = v => [v[2], v[0], v[1]];
-  const squares = [];
-  for (const s of [1, -1]){
-    let q = [[s * b * k, 0, a * k], [s * a * k, b * k, 0], [s * b * k, 0, -a * k], [s * a * k, -b * k, 0]];
-    squares.push(q); q = q.map(cyc); squares.push(q); q = q.map(cyc); squares.push(q);
-  }
-  return { tris, squares };
-}
 const CUBE_V = [[-1, -1, -1], [1, -1, -1], [1, 1, -1], [-1, 1, -1], [-1, -1, 1], [1, -1, 1], [1, 1, 1], [-1, 1, 1]];
 const CUBE_E = [[0, 1], [1, 2], [2, 3], [3, 0], [4, 5], [5, 6], [6, 7], [7, 4], [0, 4], [1, 5], [2, 6], [3, 7]];
 const TET_V = [[1, 1, 1], [1, -1, -1], [-1, 1, -1], [-1, -1, 1]];
@@ -481,6 +1137,8 @@ const S = {
   pl: { name: 'You', x: 2, z: 19, face: 1, phase: 0, moving: false, seed: 0.3, pal: palette([92, 108, 62], [186, 66, 46], [196, 150, 118], [170, 134, 88]) },
   goal: null, near: null, hits: [], bubbles: [], floats: [], moths: [], ritual: null, tune: null, fin: null, tilt: 0,
   briefed: false, finaleDone: false, zone: null, zonesSeen: new Set(), chatT: 18, radioT: 40, saveT: 0, stepPh: 0,
+  still: 0, latOp: 0, latAt: null, node: null, tally: { marks: [], vol: null, t: 0, shown: 0, next: 0, doneAt: -1 }, tallies: [], spoke: {},
+  quake: null, quakeT: 95, autowalk: false, blockedT: 0, mailWaiting: true, mailT: 0, mailRead: 0, albinoFound: false, veVol: 20,
 };
 const SITKA = { name: 'Sitka', x: -1, z: 22, face: 1, phase: 1, moving: false, seed: 1.7, pal: palette([76, 96, 112], [198, 156, 72], [150, 108, 82], [140, 112, 78]) };
 const MADRONE = { name: 'Madrone', x: -0.5, z: 16, face: 1, phase: 2, moving: false, seed: 2.9, pal: palette([158, 84, 54], [72, 110, 80], [226, 186, 152], [178, 142, 94]) };
@@ -495,9 +1153,11 @@ const LINES = {
   zone: { 'Chinook Creek': [MADRONE, 'Fish are running.'], 'Public Works Yard': [MADRONE, 'Public Works is ahead of schedule again. Show-offs.'], 'Sorrel Flats': [SITKA, 'Slug country. Watch your boots.'], 'Lookout Rise': [SITKA, 'Lamp’s lit up top.'], 'Flooded Roots': [MADRONE, 'Water’s high. Roots are holding.'], 'Highway 101': [MADRONE, 'Smell that? Pie.'], 'Cathedral Ring': [SITKA, 'Keep your voice down in here.'] },
   resolved: ['Better.', 'Quiet again.', 'Like it was never here.', 'Hear that? Nothing. Good.'],
   chief: ['Kettle’s on.', 'Radio says fog until further notice.', 'Mind the slug on the step.', 'You’ve got moss on your hat.', 'Bring the thermos back this time.'],
+  postcards: ['Public Works finished the culvert early. They would like it noted. —P.W.', 'Lamp lit. Also lit yesterday. Also tomorrow. —Lookout', 'Your file was delicious. Please send another. —the Clay Archivists', 'The whale came back for the bar. Bring bread. —Ferry', 'Pie is round again this week. —the diner on 101', 'Saw your lanterns from the ridge. Nice triangle. —a friend', 'Fog until further notice. This is the notice. —Station'],
+  quake: ['Station to all patrols. Small one, deep and slow. Over.', 'Station to all patrols. Felt it here too. Kettle walked across the stove. Over.', 'Lookout reports the lamp swung and settled. Over.'],
   radio: ['Station to all patrols. Fog holding over all four ridges. Over.', 'Lookout reports the lamp is lit. The lamp is always lit. Over.', 'Ferry reports a whale under the Columbia bar. Over.', 'Public Works asks patrols to step around the frame. Over.', 'Diner reports pie. Over.', 'Weather: fog, then fog. Visibility one tree. Over.', 'Archive reports the tetrahedron has eaten the March files. Again. Over.', 'Anyone seen the Chief’s mug? Over.'],
 };
-const RADIO = { name: 'Radio', pal: { coat: [90, 100, 96] } };
+const RADIO = { name: 'Radio', pal: { coat: [90, 100, 96] } }, POSTCARD = { name: 'Postcard', pal: { coat: [150, 120, 90] } };
 
 /* =========================================================
    Audio: generative pad, wind, creek, varied thrush, plucks and bells
@@ -532,7 +1192,7 @@ const AU = {
   wind(){ const a = this.ctx, s = a.createBufferSource(); s.buffer = this.noise; s.loop = true; const lp = a.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 420; this.lfo(lp.frequency, 0.05, 180); const g = a.createGain(); g.gain.value = 0.05; s.connect(lp); lp.connect(g); g.connect(this.master); s.start(); },
   creek(){ const a = this.ctx, s = a.createBufferSource(); s.buffer = this.noise; s.loop = true; s.playbackRate.value = 1.7; const bp = a.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 1700; bp.Q.value = 0.7; const g = a.createGain(); g.gain.value = 0; s.connect(bp); bp.connect(g); g.connect(this.master); s.start(); this.creekG = g; },
   hum(){ const a = this.ctx, o = a.createOscillator(); o.type = 'sawtooth'; o.frequency.value = 120; const o2 = a.createOscillator(); o2.frequency.value = 60; const lp = a.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 520; const g = a.createGain(); g.gain.value = 0; const t = a.createGain(); t.gain.value = 0.8; this.lfo(t.gain, 7.3, 0.2); o.connect(lp); o2.connect(lp); lp.connect(t); t.connect(g); g.connect(this.master); o.start(); o2.start(); this.humG = g; },
-  levels(creek, hum){ if (!this.ok) return; const n = this.ctx.currentTime; this.creekG.gain.setTargetAtTime(creek, n, 0.4); this.humG.gain.setTargetAtTime(hum, n, 0.25); },
+  levels(creek, hum){ if (!this.ok || !this.creekG) return; const n = this.ctx.currentTime; this.creekG.gain.setTargetAtTime(creek, n, 0.4); this.humG.gain.setTargetAtTime(hum, n, 0.25); },
   setMute(m){ if (this.ok) this.master.gain.setTargetAtTime(m ? 0 : 0.85, this.ctx.currentTime, 0.1); },
   tone(f, when, dur, type, gain, dest){ const a = this.ctx, o = a.createOscillator(), g = a.createGain(); o.type = type; o.frequency.value = f; g.gain.setValueAtTime(0.0001, when); g.gain.exponentialRampToValueAtTime(gain, when + 0.012); g.gain.exponentialRampToValueAtTime(0.0001, when + dur); o.connect(g); g.connect(dest || this.bus); o.start(when); o.stop(when + dur + 0.05); return o; },
   bell(f, delay = 0, gain = 0.07, dur = 2.6){ if (!this.ok) return; const w = this.ctx.currentTime + delay; this.tone(f, w, dur, 'sine', gain); this.tone(f * 2.76, w, dur * 0.5, 'sine', gain * 0.28); this.tone(f * 5.4, w, dur * 0.25, 'sine', gain * 0.1); },
@@ -555,6 +1215,14 @@ const AU = {
     g.gain.setValueAtTime(0.0001, w); g.gain.exponentialRampToValueAtTime(0.014, w + 0.3); g.gain.setValueAtTime(0.014, w + 1.9); g.gain.exponentialRampToValueAtTime(0.0001, w + 2.4);
     o.connect(g); g.connect(this.bus); o.start(w); o.stop(w + 2.5); [2.6, 2.95, 3.3].forEach(d => this.tone(110, w + d, 0.18, 'triangle', 0.02)); },
   drip(){ if (!this.ok) return; const w = this.ctx.currentTime, f = 1700 + Math.random() * 1100, o = this.tone(f, w, 0.07, 'sine', 0.01); o.frequency.exponentialRampToValueAtTime(f * 1.4, w + 0.05); },
+  shimmer(){ if (!this.ok) return; [1174.66, 1479.98, 1760, 2349.32].forEach((f, i) => this.bell(f, i * 0.35, 0.022, 4.5)); },
+  count(n){ if (!this.ok) return; const w = this.ctx.currentTime; this.tone(1180 + (n % 4) * 90, w, 0.07, 'triangle', 0.045); this.tone(2360, w, 0.03, 'sine', 0.012); },
+  knock(pan){ if (!this.ok) return; const a = this.ctx, w = a.currentTime + 0.05, p = a.createStereoPanner ? a.createStereoPanner() : null, out = a.createGain(); out.gain.value = 1; if (p){ p.pan.value = clamp(pan, -1, 1); out.connect(p); p.connect(this.bus); } else out.connect(this.bus);
+    [0, 0.5].forEach(d => { const s = a.createBufferSource(); s.buffer = this.noise; const bp = a.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 900; bp.Q.value = 2; const g = a.createGain(); g.gain.setValueAtTime(0.18, w + d); g.gain.exponentialRampToValueAtTime(0.0001, w + d + 0.12); s.connect(bp); bp.connect(g); g.connect(out); s.start(w + d, Math.random()); s.stop(w + d + 0.14); this.tone(210, w + d, 0.15, 'triangle', 0.05, out); }); },
+  rumble(dur){ if (!this.ok) return; const a = this.ctx, w = a.currentTime, s = a.createBufferSource(); s.buffer = this.noise; s.loop = true; s.playbackRate.value = 0.35; const lp = a.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 95; const g = a.createGain(); g.gain.setValueAtTime(0.0001, w); g.gain.exponentialRampToValueAtTime(0.32, w + dur * 0.3); g.gain.exponentialRampToValueAtTime(0.0001, w + dur); s.connect(lp); lp.connect(g); g.connect(this.master); s.start(w); s.stop(w + dur + 0.1);
+    const o = a.createOscillator(); o.frequency.value = 36; const og = a.createGain(); og.gain.setValueAtTime(0.0001, w); og.gain.exponentialRampToValueAtTime(0.06, w + dur * 0.35); og.gain.exponentialRampToValueAtTime(0.0001, w + dur); o.connect(og); og.connect(this.master); o.start(w); o.stop(w + dur + 0.1); },
+  sing(notes, delay, gain){ if (!this.ok) return; const a = this.ctx, w = a.currentTime + delay; notes.forEach((f, i) => { for (const [mult, gg] of [[1, 0.05], [2, 0.014]]){ const o = a.createOscillator(); o.frequency.value = f * mult; const v = a.createOscillator(), vg = a.createGain(); v.frequency.value = 5 + i; vg.gain.value = f * 0.004; v.connect(vg); vg.connect(o.frequency); const e = a.createGain(); e.gain.setValueAtTime(0.0001, w + i * 0.18); e.gain.exponentialRampToValueAtTime(gg * gain, w + i * 0.18 + 0.7); e.gain.exponentialRampToValueAtTime(0.0001, w + i * 0.18 + 6.5); o.connect(e); e.connect(this.bus); o.start(w + i * 0.18); v.start(w + i * 0.18); o.stop(w + 7); v.stop(w + 7); } }); },
+  rattle(gain){ if (!this.ok) return; const a = this.ctx; for (let i = 0; i < 9; i++){ const w = a.currentTime + 0.4 + i * 0.28 + Math.random() * 0.15, s = a.createBufferSource(); s.buffer = this.noise; const bp = a.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 300 + Math.random() * 300; bp.Q.value = 4; const g = a.createGain(); g.gain.setValueAtTime(0.09 * gain, w); g.gain.exponentialRampToValueAtTime(0.0001, w + 0.16); s.connect(bp); bp.connect(g); g.connect(this.bus); s.start(w, Math.random()); s.stop(w + 0.18); } },
   gulp(){ if (!this.ok) return; const w = this.ctx.currentTime, o = this.tone(240, w, 0.2, 'sine', 0.03); o.frequency.exponentialRampToValueAtTime(120, w + 0.18); },
   crackle(){ if (!this.ok) return; const a = this.ctx, w = a.currentTime, s = a.createBufferSource(); s.buffer = this.noise; const bp = a.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 2300; bp.Q.value = 1.1; const g = a.createGain(); g.gain.setValueAtTime(0.0001, w); g.gain.exponentialRampToValueAtTime(0.03, w + 0.03); g.gain.setValueAtTime(0.03, w + 0.32); g.gain.exponentialRampToValueAtTime(0.0001, w + 0.6); s.connect(bp); bp.connect(g); g.connect(this.master); s.start(w, Math.random()); s.stop(w + 0.65); this.tone(1046.5, w + 0.04, 0.1, 'square', 0.01, this.master); },
   tick(dt){ if (!this.ok) return; this.thrushT -= dt; if (this.thrushT <= 0){ this.thrush(); this.thrushT = 6 + Math.random() * 11; } this.hornT -= dt; if (this.hornT <= 0){ this.foghorn(); this.hornT = 48 + Math.random() * 30; } },
@@ -1016,7 +1684,7 @@ function drawMast(m, reflect){
   ctx.beginPath();
   for (const [a, b] of MAST_GEO.cables){
     const A = W3[a], B = W3[b], len = Math.hypot(A[0] - B[0], A[1] - B[1], A[2] - B[2]);
-    const mid = [(A[0] + B[0]) / 2, (A[1] + B[1]) / 2 - m.slack * len * 0.32 * sign, (A[2] + B[2]) / 2];
+    const qa = S.quake && !REDUCED ? S.quake.amp : 0, mid = [(A[0] + B[0]) / 2, (A[1] + B[1]) / 2 - (m.slack * len * 0.32 + qa * len * 0.06 * Math.sin(S.t * (m.done ? 44 : 19) + a * 1.3 + b)) * sign, (A[2] + B[2]) / 2];
     const cp = projLocal(m.x, 0, m.z, mid), pa = pts[a], pb = pts[b];
     ctx.moveTo(pa[0], pa[1]); ctx.quadraticCurveTo(2 * cp[0] - (pa[0] + pb[0]) / 2, 2 * cp[1] - (pa[1] + pb[1]) / 2, pb[0], pb[1]);
   }
@@ -1105,6 +1773,7 @@ function drawDome(cx, cz, Rd, yaw, panel, strut, interior, front){
 function drawHQ(){
   const z = HQ.z;
   drawDome(HQ.x, z, HQ.R, 0.28, C.panel, C.brass, C.amber, fc => Math.abs(fc.n[0]) < 0.6 && fc.n[2] < -0.3);
+  drawRail();
   const door = P(HQ.x - 0.6, 0, z - HQ.R + 0.2), s = door[2];
   ctx.fillStyle = rgb(mix(C.amber, C.light, 0.3));
   ctx.beginPath(); ctx.moveTo(door[0] - 0.9 * s, door[1]); ctx.quadraticCurveTo(door[0] - 0.95 * s, door[1] - 2.6 * s, door[0], door[1] - 2.7 * s); ctx.quadraticCurveTo(door[0] + 0.95 * s, door[1] - 2.6 * s, door[0] + 0.9 * s, door[1]); ctx.closePath(); ctx.fill();
@@ -1122,6 +1791,17 @@ function drawHQ(){
   }
   ctx.globalAlpha = 1;
 }
+/* the instrument rail by the station door: one bead for each of QuadCraft's self-checks, lit when the check passes */
+function drawRail(){
+  const rz = HQ.z - HQ.R - 0.9, n = SELFTEST.checks.length, at = i => HQ.x + 1.6 + i * 0.62, beads = SELFTEST.checks.map((c, i) => P(at(i), 1.25 + Math.sin(i / (n - 1) * Math.PI) * 0.06, rz));
+  const s = beads[0][2], zf = fogAt(rz) * 0.7;
+  ctx.strokeStyle = rgb(mix([90, 76, 58], fogC, zf)); ctx.lineWidth = Math.max(1, 0.05 * s); ctx.lineCap = 'round'; ctx.beginPath();
+  for (const x of [at(0) - 0.3, at(n - 1) + 0.3]){ const top = P(x, 1.22, rz); for (const sg of [-1, 1]){ const foot = P(x + sg * 0.4, 0, rz); lineP(foot, top); } }
+  ctx.stroke();
+  ctx.strokeStyle = rgb(mix(C.brass, fogC, zf)); ctx.lineWidth = Math.max(1, 0.035 * s); ctx.beginPath(); const a0 = P(at(0) - 0.3, 1.22, rz); ctx.moveTo(a0[0], a0[1]); for (const b of beads) ctx.lineTo(b[0], b[1]); const a1 = P(at(n - 1) + 0.3, 1.22, rz); ctx.lineTo(a1[0], a1[1]); ctx.stroke();
+  SELFTEST.checks.forEach((c, i) => { const b = beads[i]; ctx.fillStyle = c.passed ? '#bfe58a' : '#b8432f'; ctx.beginPath(); ctx.arc(b[0], b[1], Math.max(2, 0.09 * s), 0, TAU); ctx.fill(); if (c.passed){ ctx.save(); ctx.globalCompositeOperation = 'lighter'; glowAt(radialGreen, b[0], b[1], 0.5 * s, 0.55); ctx.restore(); } });
+}
+const radialGreen = radialSprite([191, 229, 138]);
 function drawDiner(){
   const z = DINER.z;
   drawDome(DINER.x, z, 5.2, 0.9, [198, 222, 214], [150, 170, 166], C.amber, fc => fc.cy > 0.08 && fc.n[2] < -0.2 && (Math.round(fc.zc * 7) % 2 === 0));
@@ -1238,7 +1918,7 @@ function drawSalmon(f){
 function veAmp(){ if (S.finaleDone || S.fin) return 1; return progress() * 0.92; }
 function drawVE(){
   const amp = veAmp(), breath = REDUCED ? 0.5 : 0.5 - 0.5 * Math.cos(S.t * 0.85);
-  const r = 1 - amp * breath, J = jitterbug(r, RING.E * 1.15);
+  const r = 1 - amp * breath, J = jitterbug(r, RING.E * 1.15); S.veVol = jitterVolume(J, RING.E * 1.15);
   const y = RING.y + (REDUCED ? 0 : Math.sin(S.t * 0.6) * 0.15), yaw = S.t * 0.18, tilt = 0.42;
   const tf = v => rotX(rotY(v, yaw), tilt);
   const cen = P(RING.x, y, RING.z), s = cen[2];
@@ -1269,6 +1949,19 @@ function drawVE(){
   }
 }
 const RING_OBJ = { id: 'ring', kind: 'ring', x: RING.x, z: RING.z };
+/* the dial's marks: the octahedron, the icosahedron and the vector equilibrium, measured from the jitterbug itself; its full scale is the hull's swell */
+const GAUGE_MARKS = [0, 2 / (1 + Math.sqrt(5)), 1].map(r => jitterVolume(jitterbug(r, 1), 1));
+const GAUGE_FULL = Math.ceil(Math.max(...Array.from({ length: 101 }, (_, i) => jitterVolume(jitterbug(i / 100, 1), 1))));
+function drawDial(){
+  const k = clamp(1 - (Math.abs(wd(S.pl.x - RING.x)) - 10) / 8, 0, 1); if (k <= 0.01 || S.mode === 'title') return;
+  const cx = 62, cy = H - 92, R0 = 36, a0 = Math.PI * 0.75, a1 = Math.PI * 2.25, ang = v => a0 + (a1 - a0) * clamp(v / GAUGE_FULL, 0, 1);
+  ctx.save(); ctx.globalAlpha = k; ctx.fillStyle = 'rgba(236,241,232,0.82)'; ctx.beginPath(); ctx.arc(cx, cy, R0 + 10, 0, TAU); ctx.fill();
+  ctx.lineCap = 'round'; ctx.lineWidth = 6; ctx.strokeStyle = 'rgba(27,40,35,0.22)'; ctx.beginPath(); ctx.arc(cx, cy, R0, a0, a1); ctx.stroke();
+  ctx.strokeStyle = '#c69c48'; ctx.beginPath(); ctx.arc(cx, cy, R0, a0, ang(S.veVol)); ctx.stroke();
+  ctx.fillStyle = '#1b2823'; for (const m of GAUGE_MARKS){ const a = ang(m); ctx.beginPath(); ctx.arc(cx + Math.cos(a) * R0, cy + Math.sin(a) * R0, 2.6, 0, TAU); ctx.fill(); }
+  ctx.font = '13px "Special Elite", monospace'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(`▵ ${S.veVol.toFixed(2)}`, cx, cy + 2);
+  ctx.restore();
+}
 
 /* =========================================================
    Particles and floating text
@@ -1542,6 +2235,7 @@ function drawMailbox(){
   if (base[0] < -4 * s || base[0] > W + 4 * s) return;
   const zf = fogAt(MAILBOX.z) * 0.8, top = P(MAILBOX.x, 1.15, MAILBOX.z), gulp = S.gulp > 0 ? Math.sin((1 - S.gulp) * Math.PI) * 0.25 : 0, sc = 0.32 * (1 + gulp);
   ctx.strokeStyle = rgb(mix([96, 64, 42], fogC, zf)); ctx.lineWidth = Math.max(1.5, 0.09 * s); ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(base[0], base[1]); ctx.lineTo(top[0], top[1]); ctx.stroke();
+  if (S.mailWaiting){ const f0 = P(MAILBOX.x + 0.12, 1.05, MAILBOX.z), f1 = P(MAILBOX.x + 0.12, 1.62, MAILBOX.z); ctx.strokeStyle = rgb(mix([96, 64, 42], fogC, zf)); ctx.lineWidth = Math.max(1, 0.04 * s); ctx.beginPath(); lineP(f0, f1); ctx.stroke(); ctx.fillStyle = rgb(mix(C.scarlet, fogC, zf)); ctx.beginPath(); ctx.moveTo(f1[0], f1[1]); ctx.quadraticCurveTo(f1[0] + 0.25 * s, f1[1] + 0.02 * s, f1[0] + 0.34 * s, f1[1] + 0.1 * s); ctx.quadraticCurveTo(f1[0] + 0.18 * s, f1[1] + 0.14 * s, f1[0], f1[1] + 0.22 * s); ctx.fill(); }
   const tf = v => rotY(rotX([v[0] * sc, v[1] * sc, v[2] * sc], 0.62), 0.5 + Math.sin(S.t * 0.4) * 0.2);
   const tp = TET_V.map(v => { const w = tf(v); return P(MAILBOX.x + w[0], 1.45 + w[1], MAILBOX.z + w[2]); });
   ctx.fillStyle = rgb(mix(C.brass, fogC, zf), 0.85);
@@ -1554,6 +2248,141 @@ function drawMailbox(){
     ctx.save(); ctx.translate(q[0], q[1]); ctx.rotate(tilt); ctx.fillStyle = 'rgba(250,246,234,0.92)';
     ctx.beginPath(); ctx.moveTo(-sz, 0); ctx.quadraticCurveTo(0, -sz * 0.9, sz, 0); ctx.quadraticCurveTo(0, sz * 0.3, -sz, 0); ctx.fill(); ctx.restore();
   }
+}
+
+/* the stillness lattice: stand still and it shows itself, fixed to the grove; every node has a whole address counted from the Ring */
+const LATP = LAT_EDGE * Math.SQRT2, LAT = ivmLattice(6.5, LAT_EDGE);
+const latWorld = n => [wrap(S.latAt.x + n[0]), S.latAt.y + n[1], S.latAt.z + n[2]];
+const nodeAddr = w => latticeAddress(wd(w[0] - RING.x), w[1], w[2] - RING.z, LAT_EDGE);
+function latNodes(){ if (!S.latAt) return []; return LAT.nodes.map(latWorld).filter(w => w[1] > -0.01 && w[2] > 7.5); }
+function lanternNode(){
+  if (S.latOp < 0.3 || S.tally.vol) return null;
+  const lx = S.pl.x + S.pl.face * 0.4, marked = new Set(S.tally.marks.map(m => m.key)); let best = null, bd = 3.6;
+  for (const w of latNodes()){ const d = Math.hypot(wd(w[0] - lx), w[1] - 0.95, w[2] - S.pl.z); if (d < bd){ const q = nodeAddr(w); if (q && !marked.has(q.join(','))){ bd = d; best = { w, q, key: q.join(',') }; } } }
+  return best;
+}
+function tapNode(cx, cy){
+  if (S.latOp < 0.3) return null; let best = null, bd = 1e9;
+  for (const w of latNodes()){ const p = P(w[0], w[1], w[2]), d = Math.hypot(p[0] - cx, p[1] - cy); if (d < Math.max(16, 0.3 * p[2]) && d < bd){ const q = nodeAddr(w); if (q){ bd = d; best = { w, q, key: q.join(',') }; } } }
+  return best;
+}
+function drawLattice(){
+  const op = S.latOp; if (op < 0.01 || !S.latAt) return;
+  ctx.save(); ctx.globalCompositeOperation = 'lighter'; ctx.lineCap = 'round';
+  ctx.strokeStyle = `rgba(246,192,104,${(op * 0.32).toFixed(3)})`; ctx.lineWidth = 1; ctx.beginPath();
+  for (const [a, b] of LAT.edges){ const wa = latWorld(a), wb = latWorld(b); if (wa[1] < -0.01 || wb[1] < -0.01 || wa[2] < 7.5 || wb[2] < 7.5) continue; lineP(P(wa[0], wa[1], wa[2]), P(wb[0], wb[1], wb[2])); }
+  ctx.stroke();
+  for (const w of latNodes()){ const p = P(w[0], w[1], w[2]); glowAt(glowGold, p[0], p[1], 0.16 * p[2], op * 0.8); }
+  if (S.node){ const p = P(S.node.w[0], S.node.w[1], S.node.w[2]); glowAt(glowWarm, p[0], p[1], (0.5 + 0.08 * Math.sin(S.t * 6)) * p[2], op); }
+  const M = S.tally.marks, T = S.tally;
+  const pts = M.map(m => P(m.w[0], m.w[1], m.w[2]));
+  for (const p of pts) glowAt(glowWarm, p[0], p[1], 0.75 * p[2], 0.9);
+  const after = T.doneAt < 0 ? 0 : T.t - T.doneAt, fade = 1 - smooth(clamp((after - 3.5) / 1.5, 0, 1));
+  if (pts.length > 1){ ctx.strokeStyle = `rgba(255,226,160,${(0.85 * fade).toFixed(3)})`; ctx.lineWidth = 1.6; ctx.beginPath(); for (let i = 0; i < pts.length; i++) for (let j = i + 1; j < pts.length; j++) lineP(pts[i], pts[j]); ctx.stroke(); }
+  if (pts.length === 4 && T.vol && T.vol.num > 0){ ctx.fillStyle = `rgba(246,192,104,${(0.14 * smooth(clamp(T.t / 0.8, 0, 1)) * fade).toFixed(3)})`; for (const [a, b, c] of TET_F){ ctx.beginPath(); ctx.moveTo(pts[a][0], pts[a][1]); ctx.lineTo(pts[b][0], pts[b][1]); ctx.lineTo(pts[c][0], pts[c][1]); ctx.closePath(); ctx.fill(); } }
+  ctx.restore();
+  if (T.vol){
+    const cx = pts.reduce((a, p) => a + p[0], 0) / pts.length, cy = Math.min(...pts.map(p => p[1])) - 34, label = T.doneAt >= 0 && T.vol.den !== 1 ? `${T.vol.num}/${T.vol.den}` : String(T.shown);
+    ctx.save(); ctx.globalAlpha = fade; ctx.font = '22px "Special Elite", monospace'; const w = Math.max(44, ctx.measureText(label).width + 30);
+    pillPath(cx - w / 2, cy - 17, w, 34); ctx.fillStyle = 'rgba(246,192,104,0.92)'; ctx.fill(); ctx.strokeStyle = 'rgba(198,156,72,0.95)'; ctx.lineWidth = 2; ctx.stroke();
+    ctx.fillStyle = '#2a1d0c'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle'; ctx.fillText(label, cx, cy + 1); ctx.restore();
+  }
+}
+const MARK_NOTES = [440, 554.37, 659.25, 880];
+function clearTally(){ const T = S.tally; T.marks = []; T.vol = null; T.t = 0; T.shown = 0; T.next = 0; T.doneAt = -1; }
+function markNode(n){
+  const T = S.tally;
+  if (T.vol) clearTally();
+  if (T.marks.some(m => m.key === n.key)){ AU.thunk(); return; }
+  T.marks.push(n); AU.pluck(MARK_NOTES[T.marks.length - 1]);
+  if (T.marks.length === 4){ const [num, den] = aceTetravolumeExact(...T.marks.map(m => m.q)); T.vol = { num: Number(num), den: Number(den) }; T.t = 0; T.shown = 0; T.next = 0.55; T.doneAt = -1; }
+}
+function updLattice(dt){
+  const pl = S.pl;
+  S.still = S.mode === 'play' && !pl.moving && !S.goal ? S.still + dt : 0;
+  const target = S.fin ? 0 : smooth(clamp((S.still - 4.5) / 3, 0, 1));
+  S.latOp = lerp(S.latOp, target, Math.min(1, dt * (target > S.latOp ? 0.7 : 4)));
+  if (S.latOp < 0.02){ S.latAt = { x: wrap(RING.x + Math.round(wd(pl.x - RING.x) / LATP) * LATP), y: LATP, z: RING.z + Math.round((pl.z - RING.z) / LATP) * LATP }; if (!S.tally.vol) clearTally(); }
+  if (target > 0.5 && !S.latChimed){ S.latChimed = true; AU.shimmer(); } if (target < 0.1) S.latChimed = false;
+  S.node = S.mode === 'play' ? lanternNode() : null;
+  if (S.node){ const nr = nearest(); if (nr && nr.kind !== 'ring') S.node = null; }
+  if (S.node && !S.spoke.mark){ S.spoke.mark = true; setTimeout(() => say(SITKA, 'Mark four.'), 700); }
+  const T = S.tally; if (!T.vol) return;
+  T.t += dt; const v = T.vol, whole = v.den === 1, target2 = whole ? v.num : 0;
+  if (target2 > 0){ const every = clamp(1.8 / target2, 0.05, 0.2); while (T.shown < target2 && T.t >= T.next){ T.shown++; T.next += every; AU.count(T.shown); } }
+  if (T.doneAt < 0 && T.t >= T.next && T.shown >= target2){ T.doneAt = T.t; tallyDone(v); }
+  if (T.doneAt >= 0 && T.t - T.doneAt > 5) clearTally();
+}
+function tallyDone(v){
+  const label = v.den === 1 ? String(v.num) : `${v.num}/${v.den}`;
+  S.tallies.push(label); if (S.tallies.length > 24) S.tallies.shift(); save(); announce(`Four marks, ${label}.`);
+  if (v.num === 0){ AU.thunk(); if (!S.spoke.flat){ S.spoke.flat = true; say(SITKA, 'Flat.'); } return; }
+  [587.33, 739.99, 880].forEach((f, i) => AU.bell(f, i * 0.12, 0.05));
+  const n = S.tallies.filter(x => x !== '0').length;
+  if (v.den === 1 && v.num === 20) say(MADRONE, 'Twenty. Same as the Ring.');
+  else if (n === 1) say(SITKA, 'Whole.');
+  else if (n === 3) say(MADRONE, 'Never comes out in pieces, does it.');
+  else if (n === 7) say(SITKA, 'Not once.');
+}
+/* tremor: the ground hums for a few seconds; taut masts ring their chords, slack ones rattle */
+function startQuake(){
+  S.quake = { t: 0, dur: 6.5, amp: 0 }; AU.rumble(6.5);
+  for (const m of MASTS){ const d = Math.hypot(wd(m.x - S.pl.x), m.z - S.pl.z), gain = clamp(1.2 - d / 90, 0.2, 1); if (m.done) AU.sing(m.notes, 0.9, gain); else AU.rattle(gain); }
+  const first = !S.spoke.quake; S.spoke.quake = true;
+  setTimeout(() => say(MADRONE, first ? 'Feel that?' : pick(['There she goes.', 'Again.', 'Easy, easy.'])), 1600);
+  if (first) setTimeout(() => say(SITKA, MASTS.some(m => m.done) ? 'Masts heard it.' : 'Hear the masts rattle?'), 4300);
+  setTimeout(() => { AU.crackle(); say(RADIO, pick(LINES.quake), 5); }, 9500);
+}
+function updQuake(dt){
+  if (!S.quake){ if (S.mode !== 'play') return; S.quakeT -= dt; if (S.quakeT <= 0) startQuake(); return; }
+  const Q = S.quake; Q.t += dt; Q.amp = Math.pow(Math.sin(Math.PI * clamp(Q.t / Q.dur, 0, 1)), 1.5);
+  if (Q.t >= Q.dur){ S.quake = null; S.quakeT = 180 + Math.random() * 120; }
+}
+/* the mail: the tetrahedron gulps the envelope and a postcard is left */
+const MAIL_OBJ = { id: 'mail', kind: 'mail', x: MAILBOX.x, z: MAILBOX.z };
+function openMail(){
+  if (!S.mailWaiting) return; S.mailWaiting = false; S.gulp = 1; AU.gulp();
+  const card = LINES.postcards[S.mailRead % LINES.postcards.length]; S.mailRead++; S.mailT = 120 + rand(0, 60);
+  setTimeout(() => { say(POSTCARD, card, 6.5); announce(`Postcard: ${card}`); }, 900); save();
+}
+/* the visitor: stands deep in the fog, off to one side, after two knocks; gone when you turn to it or walk its way */
+const VISITOR = { state: 'away', t: 0, x: 0, z: 56, a: 1, look: 0, from: 0, to: 0 };
+function updVisitor(dt){
+  const v = VISITOR, pl = S.pl;
+  if (v.state === 'away'){
+    if (S.mode !== 'play' || Math.abs(wd(pl.x - HQ.x)) < 30) return;
+    S.visitT = (S.visitT === undefined ? 70 : S.visitT) - dt; if (S.visitT > 0) return;
+    const side = Math.random() < 0.5 ? -1 : 1; v.x = wrap(cam.x + side * rand(15, 22)); v.z = rand(50, 57); v.state = 'watching'; v.t = 0; v.look = 0; v.a = 1;
+    AU.knock(side * 0.8); return;
+  }
+  v.t += dt; const p = P(v.x, 0, v.z);
+  if (v.state === 'watching'){
+    v.look = Math.abs(p[0] - W2) < 70 ? v.look + dt : Math.max(0, v.look - dt * 0.5);
+    if (v.look > 0.35 || Math.abs(wd(pl.x - v.x)) < 9 || v.t > 30){ v.state = 'leaving'; v.t = 0; v.from = v.x; v.to = wrap(v.x + (Math.random() < 0.5 ? -5 : 5)); }
+  } else if (v.state === 'leaving'){
+    const k = clamp(v.t / 1.8, 0, 1); v.x = wrap(v.from + wd(v.to - v.from) * k); v.a = 1 - smooth(clamp((v.t - 0.6) / 1.2, 0, 1));
+    if (k >= 1){ v.state = 'away'; S.visitT = 100 + Math.random() * 110; if (Math.random() < 0.5) setTimeout(() => say(MADRONE, pick(['Did you see that?', 'Sitka. Sitka. Over there.', 'Huh. Must’ve been a stump.'])), 600); }
+  }
+}
+function drawVisitor(v){
+  if (v.state === 'away') return;
+  const p = P(v.x, 0, v.z), s = p[2], col = mix([43, 38, 34], fogC, fogAt(v.z) * 0.62), sw = v.state === 'leaving' ? Math.sin(v.t * 5) * 0.25 : 0;
+  ctx.save(); ctx.globalAlpha = v.a; ctx.translate(p[0], p[1]); ctx.scale(s, s); ctx.fillStyle = rgb(col); ctx.strokeStyle = rgb(col); ctx.lineCap = 'round';
+  ctx.lineWidth = 0.24; ctx.beginPath(); ctx.moveTo(-0.16, -1.15); ctx.lineTo(-0.16 + sw, 0); ctx.moveTo(0.16, -1.15); ctx.lineTo(0.16 - sw, 0); ctx.stroke();
+  ctx.beginPath(); ctx.ellipse(0, -1.7, 0.36, 0.6, 0, 0, TAU); ctx.fill(); ctx.beginPath(); ctx.ellipse(0, -2.15, 0.5, 0.25, 0, 0, TAU); ctx.fill(); ctx.beginPath(); ctx.ellipse(0, -2.5, 0.19, 0.24, 0, 0, TAU); ctx.fill();
+  ctx.lineWidth = 0.15; ctx.beginPath(); ctx.moveTo(-0.45, -2.15); ctx.lineTo(-0.5 - sw * 0.6, -0.85); ctx.moveTo(0.45, -2.15); ctx.lineTo(0.5 + sw * 0.6, -0.85); ctx.stroke();
+  ctx.restore();
+}
+/* an albino redwood: ghost-white sprouts, rare and real, at the back of Sorrel Flats */
+const ALBINO = { x: 214, z: 46 };
+function drawAlbino(){
+  const base = P(ALBINO.x, 0, ALBINO.z), s = base[2], zf = fogAt(ALBINO.z) * 0.55, white = mix([242, 240, 232], fogC, zf);
+  ctx.save(); ctx.globalCompositeOperation = 'lighter'; glowAt(glowGold, base[0], base[1] - 3.5 * s, 5 * s, 0.22); ctx.restore();
+  ctx.strokeStyle = rgb(white); ctx.lineCap = 'round';
+  [[-0.7, 6.2, -0.05], [-0.2, 7.4, 0.04], [0.4, 5.4, 0.08], [0.9, 4.6, -0.06]].forEach(([dx, h, lean], i) => {
+    const b = P(ALBINO.x + dx, 0, ALBINO.z), t = P(ALBINO.x + dx + lean * h, h, ALBINO.z); ctx.lineWidth = Math.max(1, 0.12 * s); ctx.beginPath(); lineP(b, t); ctx.stroke();
+    ctx.lineWidth = Math.max(0.7, 0.05 * s); ctx.beginPath(); for (let k = 1; k <= 5; k++){ const y = h * (0.35 + k * 0.11), q = P(ALBINO.x + dx + lean * y, y, ALBINO.z), dir = (k + i) % 2 ? 1 : -1; ctx.moveTo(q[0], q[1]); ctx.quadraticCurveTo(q[0] + dir * 0.5 * s, q[1] - 0.15 * s, q[0] + dir * 0.9 * s, q[1] + 0.25 * s); } ctx.stroke();
+  });
 }
 
 /* the gallery, happening: a red sun behind interlocking peaks, seen only from Lookout Rise */
@@ -1569,6 +2398,8 @@ function drawRedSun(){
     for (let k = -9; k <= 9; k++){ const x = LOOKOUT.x + off + k * 16, h = hh + ((k * 7 + 21) % 3) * 9, a = P(x, 0, z), b = P(x + 8, h, z), c = P(x + 16, 0, z); ctx.lineTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.lineTo(c[0], c[1]); }
     ctx.lineTo(W + 10, y0); ctx.closePath(); ctx.fill();
   }
+  /* a lenticular cloud, stacked lenses standing still over the highest peak */
+  for (let i = 0; i < 4; i++){ const c = P(LOOKOUT.x - 24 + i * 0.6, 74 + i * 2.4, z); ctx.fillStyle = `rgba(250,242,238,${(0.78 - i * 0.16).toFixed(2)})`; ctx.beginPath(); ctx.ellipse(c[0], c[1], (15 - i * 2.6) * s, 1.5 * s, 0, 0, TAU); ctx.fill(); }
   ctx.restore();
 }
 
@@ -1617,6 +2448,9 @@ function updLife(dt){
   if (S.slip){ S.slip.t += dt / 2.6; if (S.slip.t >= 1){ S.slip = null; S.gulp = 1; if (Math.abs(wd(MAILBOX.x - S.pl.x)) < 16) AU.gulp(); } }
   if (S.gulp > 0) S.gulp = Math.max(0, S.gulp - dt * 2.5);
   S.breath = veAmp() * (0.5 - 0.5 * Math.cos(S.t * 0.85));
+  if (!S.mailWaiting && S.mode === 'play'){ S.mailT -= dt; if (S.mailT <= 0) S.mailWaiting = true; }
+  updQuake(dt); updVisitor(dt); updLattice(dt);
+  if (S.mode === 'play' && !S.albinoFound && Math.abs(wd(ALBINO.x - S.pl.x)) < 7){ S.albinoFound = true; AU.shimmer(); setTimeout(() => say(SITKA, '…Don’t put that one on the map.', 3.6), 1500); announce('A white redwood.'); save(); }
 }
 
 /* =========================================================
@@ -1635,13 +2469,14 @@ const E_HQ = entry(HQ.z, drawHQ, HQ), E_DINER = entry(DINER.z, drawDiner, DINER)
 const E_CUBES = CUBES.map(c => entry(c.z, drawCube, c)), E_MASTS = MASTS.map(m => entry(m.z, drawMast, m)), E_SLUGS = SLUGS.map(s => entry(s.z, drawSlug, s)), E_INS = INSIG.map(o => entry(o.z, drawInsignia, o)), E_SALMON = salmon.map(f => entry(f.z, drawSalmon, f));
 const E_CHARS = [S.pl, SITKA, MADRONE, CHIEF].map(ch => entry(ch.z, drawRanger, ch));
 const E_ELK = ELK.map(e => entry(e.z, drawElk, e));
+const E_VIS = entry(56, drawVisitor, VISITOR), E_ALBINO = entry(ALBINO.z, drawAlbino, ALBINO);
 const E_TETPOOL = entry(TET_POOL.z, drawTetPool, TET_POOL), E_LAMP = entry(LAMP.z, drawLamp, LAMP), E_MAIL = entry(MAILBOX.z, drawMailbox, MAILBOX), E_ASH = entry(33, drawAsh, null);
 rhodos.forEach(o => STATIC_ENTRIES.push(entry(o.z, drawRhodo, o)));
 webs.forEach(o => STATIC_ENTRIES.push(entry(o.z, drawWeb, o)));
 
 function render(){
   ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
-  camBob = REDUCED ? 0 : Math.sin(S.t * 0.35) * 0.05;
+  camBob = REDUCED ? 0 : Math.sin(S.t * 0.35) * 0.05 + (S.quake ? S.quake.amp * 0.035 * Math.sin(S.t * 29) : 0);
   HY = HYb + smooth(clamp(S.tilt, 0, 1)) * H * 1.05;
   S.hits.length = 0;
   drawSky();
@@ -1666,6 +2501,8 @@ function render(){
   if (vis(LAMP.x, LAMP.z, 4)) UL.push(E_LAMP);
   if (vis(MAILBOX.x, MAILBOX.z, 9)) UL.push(E_MAIL);
   if (vis(HQ.x, 34, 16)) UL.push(E_ASH);
+  if (VISITOR.state !== 'away'){ E_VIS.z = VISITOR.z; UL.push(E_VIS); }
+  if (vis(ALBINO.x, ALBINO.z, 4)) UL.push(E_ALBINO);
   for (const e of E_CUBES) if (vis(e.o.x, e.o.z, 3)) UL.push(e);
   for (const e of E_MASTS) if (vis(e.o.x, e.o.z, 3)) UL.push(e);
   for (const e of E_SLUGS){ e.z = e.o.z; if (vis(e.o.x, e.o.z, 1)) UL.push(e); }
@@ -1674,6 +2511,7 @@ function render(){
   for (const e of E_CHARS){ e.z = e.o.z; if (vis(e.o.x, e.o.z, 2)) UL.push(e); }
   UL.sort((a, b) => b.z - a.z);
   for (const e of UL) e.d(e.o);
+  drawLattice();
   drawRedSunGlow();
   drawMoths();
   drawBirds();
@@ -1682,6 +2520,7 @@ function render(){
   drawTuneArc();
   drawFloats();
   drawEdgeCue();
+  drawDial();
   drawBubbles();
 }
 
@@ -1692,7 +2531,7 @@ const done = arr => arr.filter(o => o.done).length;
 function progress(){ return (done(CUBES) + done(MASTS) + done(SLUGS)) / 11; }
 function allDone(){ return done(CUBES) === 5 && done(MASTS) === 3 && done(SLUGS) === 3; }
 function updateGlowTarget(){ S.glowTarget = S.finaleDone ? 1 : progress() * 0.55; }
-function saveData(){ return { v: 1, cubes: CUBES.filter(o => o.done).map(o => o.id), masts: MASTS.filter(o => o.done).map(o => o.id), slugs: SLUGS.filter(o => o.done).map(o => o.id), ins: INSIG.filter(o => o.done).map(o => o.id), briefed: S.briefed, fin: S.finaleDone, x: S.pl.x, z: S.pl.z, sound: S.sound }; }
+function saveData(){ return { v: 1, cubes: CUBES.filter(o => o.done).map(o => o.id), masts: MASTS.filter(o => o.done).map(o => o.id), slugs: SLUGS.filter(o => o.done).map(o => o.id), ins: INSIG.filter(o => o.done).map(o => o.id), tallies: S.tallies.slice(-24), mail: S.mailRead, albino: S.albinoFound, briefed: S.briefed, fin: S.finaleDone, x: S.pl.x, z: S.pl.z, sound: S.sound }; }
 function save(){ try { localStorage.setItem(SAVE_KEY, JSON.stringify(saveData())); } catch (e) { /* storage unavailable: progress lives only in this tab */ } }
 function loadStored(){ try { const raw = localStorage.getItem(SAVE_KEY); return raw ? JSON.parse(raw) : null; } catch (e) { return null; } }
 function applyData(d){
@@ -1703,12 +2542,13 @@ function applyData(d){
   SLUGS.forEach(o => { o.done = has(d.slugs, o.id); });
   INSIG.forEach(o => { o.done = has(d.ins, o.id); });
   S.briefed = !!d.briefed; S.finaleDone = !!d.fin; if (typeof d.sound === 'boolean') S.sound = d.sound;
+  S.tallies = Array.isArray(d.tallies) ? d.tallies.filter(x => typeof x === 'string' && /^\d+(\/\d+)?$/.test(x)).slice(-24) : []; S.mailRead = Number.isInteger(d.mail) && d.mail >= 0 ? d.mail : 0; S.albinoFound = !!d.albino;
   if (typeof d.x === 'number' && typeof d.z === 'number'){ S.pl.x = wrap(d.x); S.pl.z = clamp(d.z, BAND_MIN, BAND_MAX); }
   return true;
 }
 function resetAll(){
   CUBES.forEach(o => { o.done = false; o.p = 0; }); MASTS.forEach(o => { o.done = false; o.slack = 1; }); SLUGS.forEach(o => { o.done = false; }); INSIG.forEach(o => { o.done = false; });
-  S.briefed = false; S.finaleDone = false; S.fin = null; S.pl.x = 2; S.pl.z = 19; S.pl.face = 1; S.glow = 0; S.zonesSeen.clear();
+  S.briefed = false; S.finaleDone = false; S.fin = null; S.tallies = []; S.mailRead = 0; S.mailWaiting = true; S.albinoFound = false; S.pl.x = 2; S.pl.z = 19; S.pl.face = 1; S.glow = 0; S.zonesSeen.clear();
   SITKA.x = -1; SITKA.z = 22; MADRONE.x = -0.5; MADRONE.z = 16; cam.x = S.pl.x;
   updateGlowTarget(); save();
 }
@@ -1727,6 +2567,9 @@ function setSoundIcon(){ $('soundWaves').style.display = S.sound ? '' : 'none'; 
 function renderLedger(){
   drawMap();
   $('insigTitle').textContent = `On our coats · ${done(INSIG)} of 8`;
+  const tl = $('tallies'); tl.replaceChildren(...(S.tallies.length ? S.tallies : ['·']).map(x => { const e = document.createElement('span'); e.textContent = x; if (!S.tallies.length) e.className = 'empty'; return e; }));
+  const lp = $('lamps'), pass = SELFTEST.checks.filter(c => c.passed).length;
+  lp.replaceChildren(...SELFTEST.checks.map(c => { const e = document.createElement('i'); if (!c.passed) e.className = 'out'; e.title = c.name; return e; }), Object.assign(document.createElement('span'), { textContent: `${pass} of ${SELFTEST.checks.length}` }));
   $('insig').innerHTML = INSIG.map(o => `<div class="badge${o.done ? '' : ' locked'}"><svg aria-hidden="true"><use href="#g-${o.done ? o.glyph : 'quadray'}"/></svg><span>${o.done ? o.name : '—'}</span></div>`).join('');
 }
 /* the beat, drawn as a ring in the notebook */
@@ -1765,8 +2608,9 @@ function closeModals(){ for (const k of ['title', 'ledger']) ui[k].hidden = true
 /* =========================================================
    Interactions
    ========================================================= */
-function interactRadius(o){ return o.kind === 'cube' ? 3.4 : o.kind === 'mast' ? 3.7 : o.kind === 'slug' ? 2.6 : o.kind === 'chief' ? 4.2 : o.kind === 'ring' ? 7.5 : 0; }
+function interactRadius(o){ return o.kind === 'mail' ? 2.8 : o.kind === 'cube' ? 3.4 : o.kind === 'mast' ? 3.7 : o.kind === 'slug' ? 2.6 : o.kind === 'chief' ? 4.2 : o.kind === 'ring' ? 7.5 : 0; }
 function promptFor(o){
+  if (o.kind === 'mail') return 'Check the mail';
   if (o.kind === 'cube') return 'Raise lanterns';
   if (o.kind === 'mast') return 'Pluck the cable';
   if (o.kind === 'slug') return 'Kneel';
@@ -1774,13 +2618,13 @@ function promptFor(o){
   if (o.kind === 'ring') return allDone() || S.finaleDone ? 'Stand with it' : 'Look';
   return '';
 }
-function interactables(){ const L = [CHIEF, RING_OBJ]; CUBES.forEach(o => { if (!o.done) L.push(o); }); MASTS.forEach(o => { if (!o.done) L.push(o); }); SLUGS.forEach(o => { if (!o.done) L.push(o); }); return L; }
+function interactables(){ const L = [CHIEF, RING_OBJ]; if (S.mailWaiting) L.push(MAIL_OBJ); CUBES.forEach(o => { if (!o.done) L.push(o); }); MASTS.forEach(o => { if (!o.done) L.push(o); }); SLUGS.forEach(o => { if (!o.done) L.push(o); }); return L; }
 function nearest(){
   let best = null, bd = 1e9;
   for (const o of interactables()){ const d = Math.hypot(wd(o.x - S.pl.x), o.z - S.pl.z); if (d < interactRadius(o) && d < bd){ bd = d; best = o; } }
   return best;
 }
-function act(){ if (S.mode === 'tuning'){ pluck(); return; } if (S.mode === 'finale'){ skipFinale(); return; } if (S.mode !== 'play') return; const o = S.near; if (o) interact(o); }
+function act(){ if (S.mode === 'tuning'){ pluck(); return; } if (S.mode === 'finale'){ skipFinale(); return; } if (S.mode !== 'play') return; if (S.node){ markNode(S.node); return; } const o = S.near; if (o) interact(o); }
 function interact(o){
   S.goal = null;
   if (o.done) return;
@@ -1788,6 +2632,7 @@ function interact(o){
   else if (o.kind === 'mast') openTuner(o);
   else if (o.kind === 'slug') survey(o);
   else if (o.kind === 'chief') say(CHIEF, pick(LINES.chief));
+  else if (o.kind === 'mail') openMail();
   else if (o.kind === 'ring'){
     if (S.finaleDone){ say(MADRONE, 'Still breathing.'); AU.bell(587.33, 0, 0.05); }
     else if (allDone()) startFinale();
@@ -1907,7 +2752,9 @@ function updPlayer(dt){
   const wet = inCreek(pl.x, pl.z) || inPool(pl.x, pl.z);
   const fast = keys.has('ShiftLeft') || keys.has('ShiftRight');
   const sp = (fast ? 6.2 : 3.9) * (wet ? 0.62 : 1);
+  if (S.autowalk && (ix || iz || S.goal)) S.autowalk = false;
   if (ix || iz){ S.goal = null; }
+  else if (S.autowalk){ ix = pl.face; }
   else if (S.goal){
     const g = S.goal, t = g.o ? approachPoint(g.o) : g;
     const dx = wd(t.x - pl.x), dz = t.z - pl.z, d = Math.hypot(dx, dz);
@@ -1923,6 +2770,7 @@ function updPlayer(dt){
     collide(pl, 0.42); pl.z = clamp(pl.z, BAND_MIN, BAND_MAX);
     const moved = Math.hypot(wd(pl.x - ox), pl.z - oz);
     pl.moving = moved > 0.002;
+    if (S.autowalk){ S.blockedT = moved < sp * dt * 0.25 ? S.blockedT + dt : 0; if (S.blockedT > 0.8){ S.autowalk = false; S.blockedT = 0; AU.thunk(); } }
     if (Math.abs(ix) > 0.15) pl.face = ix > 0 ? 1 : -1;
     const prev = pl.phase; pl.phase += moved * 1.7;
     if (Math.floor(prev / Math.PI) !== Math.floor(pl.phase / Math.PI)) AU.step(wet);
@@ -2011,8 +2859,8 @@ function update(dt){
   buildMist();
   S.pull = S.mode === 'play' ? nextTarget() : null;
   if (S.mode === 'play'){
-    S.near = nearest();
-    setPrompt(S.near ? promptFor(S.near) : '');
+    S.near = S.node ? null : nearest();
+    setPrompt(S.node ? `Mark ${S.node.q.join(' · ')}` : S.near ? promptFor(S.near) : '');
     for (const o of INSIG) if (!o.done && Math.hypot(wd(o.x - S.pl.x), o.z - S.pl.z) < 1.6) collect(o);
     for (const c of CUBES) if (!c.done && !c.seen && Math.hypot(wd(c.x - S.pl.x), c.z - S.pl.z) < 11){ c.seen = true; say(MADRONE, 'There. Hear it?'); }
     const z = zoneAt(S.pl.x);
@@ -2034,6 +2882,7 @@ function update(dt){
    Input
    ========================================================= */
 function handleTap(cx, cy, fresh){
+  if (fresh && S.latOp > 0.3){ const n = tapNode(cx, cy); if (n){ markNode(n); return; } }
   if (fresh){
     let best = null, bd = 1e9;
     for (const h of S.hits){ const d = Math.hypot(cx - h.x, cy - h.y); if (d < h.r && d < bd){ bd = d; best = h.o; } }
@@ -2072,6 +2921,7 @@ window.addEventListener('keydown', e => {
   if (MOVE_KEYS.includes(k)){ keys.add(k); if (k.startsWith('Arrow')) e.preventDefault(); S.pl.kneelT = 0; }
   if ((k === 'KeyE' || k === 'Space' || k === 'Enter') && !e.repeat){ e.preventDefault(); act(); }
   if (k === 'KeyL' && S.mode === 'play') openLedger();
+  if (k === 'KeyR' && S.mode === 'play' && !e.repeat){ S.autowalk = !S.autowalk; S.blockedT = 0; S.goal = null; }
   if (k === 'KeyM') toggleSound();
 });
 window.addEventListener('keyup', e => { keys.delete(e.code); if (S.mode === 'tuning' && e.code === 'Space') e.preventDefault(); });
@@ -2110,7 +2960,29 @@ document.addEventListener('visibilitychange', () => { if (!AU.ctx) return; if (d
 window.addEventListener('resize', resize);
 
 /* small test hook for play-testing */
-window.__oss = { S, CUBES, MASTS, SLUGS, INSIG, RING, step(sec){ for (let i = 0; i < sec * 30; i++){ S.t += 1 / 30; update(1 / 30); } render(); }, teleport(x, z){ S.pl.x = wrap(x); S.pl.z = clamp(z, BAND_MIN, BAND_MAX); cam.x = S.pl.x; }, finishTasks(){ CUBES.forEach(o => { o.done = true; o.p = 1; }); MASTS.forEach(o => { o.done = true; o.slack = 0; }); SLUGS.forEach(o => { o.done = true; }); updateGlowTarget(); }, timeRender(n){ const t0 = performance.now(); for (let i = 0; i < n; i++){ S.t += 1 / 60; update(1 / 60); render(); } return (performance.now() - t0) / n; } };
+window.__oss = { S, CUBES, MASTS, SLUGS, INSIG, RING, LOOP, LAT_EDGE,
+  selfTest(){ return { passed: SELFTEST.checks.filter(c => c.passed).length, total: SELFTEST.checks.length }; },
+  ringVolume(){ return S.veVol; }, gaugeMarks(){ return GAUGE_MARKS.slice(); },
+  lattice(){ return { opacity: +S.latOp.toFixed(3), nodes: latNodes().length, node: S.node && S.node.q, marks: S.tally.marks.map(m => m.q), vol: S.tally.vol, shown: S.tally.shown, tallies: S.tallies.slice() }; },
+  nodeScreen(i){ const w = latNodes()[i]; if (!w) return null; const p = P(w[0], w[1], w[2]); return { x: p[0], y: p[1], q: nodeAddr(w) }; },
+  tap(x, y){ handleTap(x, y, true); }, act(){ act(); },
+  quake(){ startQuake(); return true; }, quakeState(){ return S.quake ? { t: +S.quake.t.toFixed(2), amp: +S.quake.amp.toFixed(3) } : null; },
+  autowalk(on){ if (typeof on === 'boolean') S.autowalk = on; return S.autowalk; },
+  mail(){ return { waiting: S.mailWaiting, read: S.mailRead }; },
+  visitor(show){ if (show) S.visitT = 0; return { state: VISITOR.state, x: +VISITOR.x.toFixed(1), z: +VISITOR.z.toFixed(1) }; },
+  albino(){ return S.albinoFound; },
+  async audioCheck(name, args, dur, at){
+    const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext; if (!OAC) return { error: 'no OfflineAudioContext' };
+    const sr = 22050, oc = new OAC(1, Math.ceil(sr * (dur || 4)), sr), saved = { ctx: AU.ctx, master: AU.master, bus: AU.bus, noise: AU.noise, ok: AU.ok };
+    let d;
+    try { AU.ctx = oc; AU.master = oc.createGain(); AU.master.connect(oc.destination); AU.bus = AU.master; AU.noise = AU.noiseBuf(); AU.ok = true; AU[name](...(args || [])); d = (await oc.startRendering()).getChannelData(0); }
+    finally { Object.assign(AU, saved); }
+    const N = 2048, peakAt = i0 => { let bf = 0, bm = 0; for (let f = 40; f <= 6000; f += 15){ let re = 0, im = 0; for (let k = 0; k < N; k++){ const v = (d[i0 + k] || 0) * (0.5 - 0.5 * Math.cos(TAU * k / N)), ph = TAU * f * k / sr; re += v * Math.cos(ph); im -= v * Math.sin(ph); } const m = Math.hypot(re, im); if (m > bm){ bm = m; bf = f; } } return bf; };
+    let sum = 0, peak = 0, bestE = 0, bi = 0; for (const v of d){ sum += v * v; peak = Math.max(peak, Math.abs(v)); }
+    for (let i = 0; i + N <= d.length; i += 512){ let e = 0; for (let k = 0; k < N; k += 4) e += d[i + k] * d[i + k]; if (e > bestE){ bestE = e; bi = i; } }
+    return { rms: +Math.sqrt(sum / d.length).toFixed(5), peak: +peak.toFixed(4), loudestAt: +(bi / sr).toFixed(2), peakHz: peakAt(bi), at: (at || []).map(t => [t, peakAt(Math.floor(t * sr))]) };
+  },
+  step(sec){ for (let i = 0; i < sec * 30; i++){ S.t += 1 / 30; update(1 / 30); } render(); }, teleport(x, z){ S.pl.x = wrap(x); S.pl.z = clamp(z, BAND_MIN, BAND_MAX); cam.x = S.pl.x; }, finishTasks(){ CUBES.forEach(o => { o.done = true; o.p = 1; }); MASTS.forEach(o => { o.done = true; o.slack = 0; }); SLUGS.forEach(o => { o.done = true; }); updateGlowTarget(); }, timeRender(n){ const t0 = performance.now(); for (let i = 0; i < n; i++){ S.t += 1 / 60; update(1 / 60); render(); } return (performance.now() - t0) / n; } };
 
 /* =========================================================
    Boot

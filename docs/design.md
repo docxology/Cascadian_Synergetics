@@ -39,7 +39,7 @@ The Office of Synergetics Services gallery supplied scenes, not just objects:
 
 ## Instruments
 
-The field station carries code from two sibling projects, QuadCraft and QuadMath, and uses it where a ranger would: to address a node, to count a tetrahedron, to read the Ring, to check the station's instruments. The code is spliced in, not rewritten, and [imports.md](imports.md) explains how the copies are kept identical to upstream.
+Both games carry code from two sibling projects, QuadCraft and QuadMath, and use it where a ranger would: to address a node, to count a tetrahedron, to read the Ring, to check the station's instruments. The code is spliced in, not rewritten, and [imports.md](imports.md) explains how the copies are kept identical to upstream.
 
 ## Access
 

@@ -26,7 +26,8 @@ export const PAGES = [
 
 // Spliced blocks: which files each source carries, in order.
 export const SPLICES = {
-  'src/field-station.html': ['vendor/quadcraft/quadray.js', 'vendor/quadcraft/synergetics.js', 'lib/tetravolume.js'],
+  'src/storybook.html': ['vendor/quadcraft/quadray.js', 'vendor/quadcraft/synergetics.js', 'lib/tetravolume.js', 'lib/grove-geometry.js'],
+  'src/field-station.html': ['vendor/quadcraft/quadray.js', 'vendor/quadcraft/synergetics.js', 'lib/tetravolume.js', 'lib/grove-geometry.js'],
 };
 const SPLICE_RE = /\/\* ==== splice (\S+) ==== \*\/\n([\s\S]*?)\/\* ==== end splice \1 ==== \*\//g;
 
