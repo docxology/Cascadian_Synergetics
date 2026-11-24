@@ -37,6 +37,11 @@ for (const file of ['src/storybook.html', 'src/field-station.html']) {
   ok(!/\balert\(|\bconfirm\(|\bprompt\(/.test(inline.join('\n')), `${file}: no alert/confirm/prompt dialogs`);
 }
 
+/* The 3D view is sized by CSS, not by its pixel buffer: the game lowers its pixel ratio when frames run slow
+   (and raises it on dense screens), and a canvas without a CSS size would shrink or overflow with it. */
+{ const fsHtml = read('src/field-station.html'), rule = (fsHtml.match(/#view\{[^}]*\}/) || [''])[0];
+  ok(/renderer\.setSize\([^)]*false\)/.test(fsHtml) && /width:100%/.test(rule) && /height:100%/.test(rule), 'src/field-station.html: the 3D canvas fills the frame at any pixel ratio (CSS width and height 100%)'); }
+
 /* 2. Standalone pages are a fresh build of the sources */
 try {
   const out = execFileSync(process.execPath, [join(ROOT, 'tools/build.mjs'), '--check'], { stdio: 'pipe', encoding: 'utf8' });
