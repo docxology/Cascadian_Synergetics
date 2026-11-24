@@ -1593,7 +1593,8 @@ const IVM_BIG = buildIVM(30, 3.2, 0xffe2a0); scene.add(IVM_BIG); IVM_BIG.positio
 /* the tally: a node under the gaze, up to four marks, and the tetrahedron they span */
 const TALLY_OBJ = (() => {
   const grp = new THREE.Group(); scene.add(grp);
-  const glow = (color, size) => { const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: TEX.soft, color, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, fog: false })); sp.scale.set(size, size, 1); sp.visible = false; grp.add(sp); return sp; };
+  /* the markers are a surveyor's beacons: drawn whole, never cut in half by the ground a node sits on */
+  const glow = (color, size) => { const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: TEX.soft, color, transparent: true, depthWrite: false, depthTest: false, blending: THREE.AdditiveBlending, fog: false })); sp.scale.set(size, size, 1); sp.renderOrder = 2; sp.visible = false; grp.add(sp); return sp; };
   const hover = glow(0xfff2c8, 0.85), marks = [0, 1, 2, 3].map(() => glow(0xffc070, 1.25));
   const fg = new THREE.BufferGeometry(); fg.setAttribute('position', new THREE.BufferAttribute(new Float32Array(4 * 3 * 3), 3));
   const faces = new THREE.Mesh(fg, new THREE.MeshBasicMaterial({ color: 0xf6c068, transparent: true, opacity: 0, side: THREE.DoubleSide, depthWrite: false, blending: THREE.AdditiveBlending, fog: false }));
