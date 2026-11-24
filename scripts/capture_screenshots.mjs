@@ -1,7 +1,10 @@
 #!/usr/bin/env node
 // Capture the paper's two screenshots from the games themselves.
 //
-//   node scripts/capture_screenshots.mjs [--out DIR] [--chrome PATH]
+//   node scripts/capture_screenshots.mjs [--set paper|social] [--out DIR] [--only FILE] [--chrome PATH]
+//
+// The paper set (the default) writes docs/images/ and its record; the social set writes three wide frames for sharing
+// to output/social/. --only takes one scene of a set into a scratch folder given by --out.
 //
 // Serves the repository on 127.0.0.1, opens each standalone game in headless Chrome at a fixed size, and before any
 // page script runs seeds Math.random and stops the page's own animation loop, so that time moves only when the page's
@@ -66,6 +69,45 @@ export const SCENES = [
       if (sb.lattice().marks.length !== 4 || sb.lattice().vol === null) throw new Error('the four marks did not count: ' + JSON.stringify(sb.lattice()));
       ({ lattice: sb.lattice(), marked: four.map(n => n.q) })`,
   },
+];
+
+/* Wide frames for sharing the games (node scripts/capture_screenshots.mjs --set social): 16:9, 2400 by 1350. They are
+   not the paper's figures, so they go to output/social/ with their own record, social.json; scripts/make_social.py
+   adds a fourth image, the jitterbug's gauge drawn for sharing. */
+const WIDE = { width: 1200, height: 675, scale: 2 };
+export const SOCIAL = [
+  {
+    file: 'social-1-field-station-lattice.jpg',
+    page: 'field-station/index.html',
+    shows: 'At the Cathedral Ring in the field station, the stillness lattice glows and four marked nodes are counted',
+    viewport: WIDE,
+    ready: '!!(window.__fs && window.THREE)',
+    setup: `
+      const fs = window.__fs; document.getElementById('btnBegin').click(); window.dispatchEvent(new Event('resize'));
+      // stand still a little way from the Ring, facing it, until the lattice glows around the ranger
+      fs.teleport(7, 8, 0); fs.S.still = 0; fs.face(0, 0); fs.S.pl.pitch = 0.04; fs.step(9);
+      const yaw = fs.S.pl.yaw, fwd = [-Math.sin(yaw), -Math.cos(yaw)], e = [fs.S.pl.x, fs.S.pl.y + 1.68, fs.S.pl.z];
+      const dist = (p, q) => Math.hypot(p[0] - q[0], p[1] - q[1], p[2] - q[2]);
+      const nodes = Array.from({ length: fs.lattice().nodes }, (_, i) => fs.nodeWorld(i)), strut = Math.min(...nodes.slice(1).map(p => dist(p, nodes[0])).filter(d => d > 0.1));
+      // four mutually adjacent nodes in front, within reach and off the ground: a unit tetrahedron of the lattice
+      const near = nodes.filter(p => { const d = dist(p, e), f = ((p[0] - e[0]) * fwd[0] + (p[2] - e[2]) * fwd[1]) / d; return d > 3 && d < 6 && f > 0.35 && p[1] > 0.3; });
+      const adj = (p, q) => Math.abs(dist(p, q) - strut) < 0.01;
+      let four = null;
+      for (const a of near) { for (const b of near) { if (!adj(a, b)) continue; for (const c of near) { if (!adj(a, c) || !adj(b, c)) continue;
+        for (const d of near) { if (adj(a, d) && adj(b, d) && adj(c, d)) { four = [a, b, c, d]; break; } } if (four) break; } if (four) break; } if (four) break; }
+      if (!four) throw new Error('no unit tetrahedron of nodes in reach');
+      for (const p of four) {   // mark each by looking at it, as a player does
+        fs.lookAt(...p); fs.step(0.05);
+        if (document.getElementById('prompt').hidden || !document.getElementById('promptText').textContent.startsWith('Mark')) throw new Error('a node in reach could not be marked');
+        fs.act();
+      }
+      // face the Ring again, its vector equilibrium framed by the glowing lattice, and let the counter click
+      fs.face(0, 0); fs.S.pl.pitch = 0.2; fs.step(1.6);
+      if (fs.lattice().marks.length !== 4) throw new Error('the four marks did not count: ' + JSON.stringify(fs.lattice()));
+      ({ lattice: fs.lattice(), strut, selfTest: fs.selfTest().passed + ' of ' + fs.selfTest().total })`,
+  },
+  { ...SCENES[0], file: 'social-2-lookout-rise.jpg', viewport: WIDE },
+  { ...SCENES[1], file: 'social-3-storybook-ring.jpg', viewport: WIDE },
 ];
 
 function chromePath(given) {
@@ -156,14 +198,20 @@ async function capture(chrome, base, scene) {
 
 async function main(argv) {
   const arg = name => { const i = argv.indexOf(name); return i >= 0 ? argv[i + 1] : undefined; };
-  const out = resolve(arg('--out') || join(ROOT, 'docs/images'));
+  const set = arg('--set') || 'paper';
+  if (!['paper', 'social'].includes(set)) throw new Error(`--set ${set}: the sets are paper and social`);
+  const only = arg('--only'), scenes = (set === 'paper' ? SCENES : SOCIAL).filter(s => !only || s.file === only);
+  if (!scenes.length) throw new Error(`--only ${only}: no such scene in the ${set} set`);
+  if (only && !arg('--out')) throw new Error('--only takes one scene into a scratch folder: give --out too, so the set and its record stay whole');
+  const out = resolve(arg('--out') || join(ROOT, set === 'paper' ? 'docs/images' : 'output/social'));
   const chrome = chromePath(arg('--chrome'));
   await mkdir(out, { recursive: true });
   const server = await serve();
   const base = `http://127.0.0.1:${server.address().port}`;
-  const record = { about: 'Written by scripts/capture_screenshots.mjs; tests/check.mjs holds each image to its SHA-256 here.', shots: [] };
+  const record = { about: set === 'paper' ? 'Written by scripts/capture_screenshots.mjs; tests/check.mjs holds each image to its SHA-256 here.'
+    : 'Written by scripts/capture_screenshots.mjs --set social: wide frames of the games for sharing, not figures of the paper.', shots: [] };
   try {
-    for (const scene of SCENES) {
+    for (const scene of scenes) {
       const { jpeg, report } = await capture(chrome, base, scene);
       await writeFile(join(out, scene.file), jpeg);
       record.shots.push({ file: scene.file, sha256: sha256(jpeg), shows: scene.shows, page: scene.page,
@@ -171,7 +219,7 @@ async function main(argv) {
       console.log(`${relative(process.cwd(), join(out, scene.file))}  ${jpeg.length} bytes  ${JSON.stringify(report).slice(0, 160)}`);
     }
   } finally { server.close(); }
-  await writeFile(join(out, 'screenshots.json'), JSON.stringify(record, null, 1) + '\n');
+  await writeFile(join(out, set === 'paper' ? 'screenshots.json' : 'social.json'), JSON.stringify(record, null, 1) + '\n');
 }
 
 if (realpathSync(process.argv[1]) === realpathSync(fileURLToPath(import.meta.url))) {

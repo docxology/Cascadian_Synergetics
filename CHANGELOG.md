@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- **Images for sharing.** `scripts/capture_screenshots.mjs --set social` takes three wide frames of the games (the field station's lattice at the Cathedral Ring with four marked nodes counted, the view from Lookout Rise, the storybook at the Ring), and `scripts/make_social.py` draws the jitterbug's gauge as a fourth, its numbers, address and DOI computed by `tools/facts.mjs`. `--only` re-takes one scene into a scratch folder.
+- Every Zenodo version's description now carries clickable links.
+
 ## 0.5.1 (2026-11-24)
 
 - **Archived on Zenodo** as [doi:10.5281/zenodo.24511763](https://doi.org/10.5281/zenodo.24511763), reserved before the tag like 0.5.0's, so this release's `CITATION.cff` and paper cite it.

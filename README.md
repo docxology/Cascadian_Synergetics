@@ -144,6 +144,20 @@ That needs a template checkout beside this one with its project lane linked here
 
 Release 0.5.1, the paper and the source at its tag, is archived on Zenodo as [doi:10.5281/zenodo.24511763](https://doi.org/10.5281/zenodo.24511763), release 0.5.0 as [doi:10.5281/zenodo.24511112](https://doi.org/10.5281/zenodo.24511112), and release 0.4.0 as [doi:10.5281/zenodo.24508085](https://doi.org/10.5281/zenodo.24508085); [doi:10.5281/zenodo.24508082](https://doi.org/10.5281/zenodo.24508082) always resolves to the latest archived release.
 
+## Images for sharing
+
+Four 2400 by 1350 images, made the way the paper's figures are: three frames of the games taken through their test hooks, and the jitterbug's gauge drawn from the same computation the paper states.
+
+```bash
+node scripts/capture_screenshots.mjs --set social
+```
+
+```bash
+python3 scripts/make_social.py
+```
+
+Both write to `output/social/`; the first needs Chrome and a network connection, the second matplotlib (the docxology/template interpreter has it).
+
 ## Editing and republishing
 
 Edit `src/` (or `lib/`), run `node tools/build.mjs`, commit, then `node tools/ci.mjs`. To update the hosted artifacts, publish `src/storybook.html` and `src/field-station.html` to their existing artifact links; the field station's source already carries the spliced code. To move the imports to newer upstream commits, follow [docs/imports.md](docs/imports.md#updating-the-imports). See [AGENTS.md](AGENTS.md) for the rules the games keep.
