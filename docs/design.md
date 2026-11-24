@@ -29,9 +29,9 @@ The Office of Synergetics Services gallery supplied scenes, not just objects:
 - the station at redwood dusk (the geodesic HQ)
 - salmon around a luminous tetrahedron (the creek pool)
 - ants converging under a rural post-office lamp
-- cuboctahedral ash over the station (storybook)
 - clay archivists and a file-eating tetrahedron (the storybook's mailbox, and a radio bulletin)
-- a red sun over interlocking peaks (storybook, Lookout Rise); in the field station, a mountain with a lenticular cloud that stands up out of the fog when you reach the top of Lookout Rise
+- a red sun over interlocking peaks (storybook, Lookout Rise); in the field station, the summit of Lookout Rise shows both a mountain with a lenticular cloud and, toward the sun, a red disc over folded ridges, while the high pale sun of the forest floor fades out
+- cuboctahedral ash over the station (both games)
 - moonlit tensegrity roots in a flooded forest (the ghost forest's mast)
 - the fire lookout, the pins, coins, patches and ferry token
 
@@ -41,4 +41,4 @@ The field station carries code from two sibling projects, QuadCraft and QuadMath
 
 ## Not built yet
 
-In the field station: the red sun at Lookout Rise, ground tremors that make the masts sing, elk, murrelets, the station's ash and mailbox, and the diner on Highway 101.
+In the field station: the station's mailbox and its file-eating tetrahedron, and the diner on Highway 101.

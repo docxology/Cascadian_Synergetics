@@ -10,9 +10,10 @@ The grove is invented; most of what lives in it is not.
 - **Banana slugs** (*Ariolimax columbianus*) are bright yellow and grow to about 25 cm.
 - **Chinook salmon** run upstream through coastal creeks.
 - **The varied thrush** sings long, single, slightly buzzing whistles, each at a different pitch. It is the bird you hear most.
-- **Marbled murrelets** are seabirds that nest high on the branches of old-growth conifers and fly inland at dawn (storybook).
-- **Roosevelt elk** graze the coastal prairies and redwood edges (storybook).
+- **Marbled murrelets** are seabirds that nest high on the branches of old-growth conifers and fly inland at dawn. Their nests went unfound until 1974; their high *keer* calls overhead are often the only sign of them.
+- **Roosevelt elk** graze the coastal prairies and redwood edges. In autumn the bulls bugle, a rising whistle that breaks into grunts. In the field station a small herd grazes the lookout clearing.
 - **Pacific rhododendron** flowers pink in the redwood understory (storybook).
+- **Episodic tremor and slip.** Every year or so, deep under the Cascadia coast, the subducting plate slips slowly for weeks at a time, with a faint tremor that seismometers record and people almost never feel. The field station's tremors are a felt cousin of it.
 - **Ghost forests.** On 26 January 1700 a great Cascadia Subduction Zone earthquake dropped stretches of the coast, and tidewater drowned the forests standing there. Silver trunks of western red cedar still stand in some of those marshes. The field station's ghost forest is one.
 - **Fire lookouts** stand on Cascadian summits and ridges, their lamps the last lights in the fog.
 - **"The mountain's out."** Around Puget Sound people say it on the days Rainier shows itself over the cloud, and the same feeling belongs to every Cascade volcano seen from the coast. From the top of Lookout Rise, one stands up out of the fog.

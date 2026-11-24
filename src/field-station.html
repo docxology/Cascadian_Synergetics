@@ -227,6 +227,8 @@ const SAVE_KEY = 'oss-fieldstation-v1';
 function mulberry32(a){ return function(){ a |= 0; a = a + 0x6D2B79F5 | 0; let t = Math.imul(a ^ a >>> 15, 1 | a); t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t; return ((t ^ t >>> 14) >>> 0) / 4294967296; }; }
 const rnd = mulberry32(0x0551975);
 const R = (a, b) => a + (b - a) * rnd();
+/* for things that move or come and go; the grove's layout keeps the seeded R */
+const rand = (a, b) => a + (b - a) * Math.random();
 const clamp = (v, a, b) => v < a ? a : v > b ? b : v;
 const lerp = (a, b, t) => a + (b - a) * t;
 const smooth = t => t * t * (3 - 2 * t);
@@ -932,7 +934,7 @@ const sky = new THREE.Mesh(new THREE.SphereGeometry(500, 32, 16), new THREE.Shad
   fragmentShader: 'uniform vec3 top; uniform vec3 horizon; uniform float open; varying vec3 vP; void main(){ float h = clamp(vP.y, 0.0, 1.0); vec3 c = mix(horizon, top, smoothstep(0.05, 0.9, h)); c = mix(c, vec3(0.93, 0.94, 0.9), open * smoothstep(0.3, 1.0, h)); gl_FragColor = vec4(c, 1.0); }',
 }));
 scene.add(sky);
-const sunDir = new THREE.Vector3(-0.55, 0.62, 0.3).normalize();
+const sunDir = new THREE.Vector3(-0.55, 0.62, 0.3).normalize(), SUN_RED = new THREE.Color(0xe7a98e);
 const sun = new THREE.Sprite(new THREE.SpriteMaterial({ map: TEX.rose, color: 0xffffff, transparent: true, depthWrite: false, fog: false, opacity: 0.9 }));
 sun.scale.set(150, 150, 1); scene.add(sun);
 const hemi = new THREE.HemisphereLight(0xf1ead6, 0x4b6045, 0.78); scene.add(hemi);
@@ -1373,6 +1375,12 @@ const LAMP_OBJ = (() => {
   const cab = new THREE.LineSegments(cg, new THREE.LineBasicMaterial({ color: 0xc69c48 })); cab.position.set(LOOKOUT.x, top + H + 1.8, LOOKOUT.z); scene.add(cab);
   const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: TEX.soft, color: 0xffc070, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0.9, fog: false })); glow.scale.set(7, 7, 1); glow.position.copy(cab.position); scene.add(glow);
 }
+/* the clearest bearing from (cx, cz) within span of th0: the one whose 24-degree window the fewest trunks cross */
+function gapAzimuth(cx, cz, th0, span){
+  const occl = th => { let o = 0; for (const sd of SOLIDS){ const dx = sd.x - cx, dz = sd.z - cz, d = Math.hypot(dx, dz); if (d < 6 || d > 140) continue; const off = Math.abs(angDiff(Math.atan2(dz, dx), th)), half = Math.asin(Math.min(1, sd.r / d)); o += Math.max(0, Math.min(0.21, off + half) - Math.max(-0.21, off - half)); } return o; };
+  let az = th0, best = Infinity; for (let th = th0 - span; th <= th0 + span; th += 0.02){ const o = occl(th); if (o < best){ best = o; az = th; } }
+  return az;
+}
 /* from the top of Lookout Rise, the mountain stands up out of the fog to the east, a lenticular cloud on its summit */
 const VISTA = (() => {
   const tex = canvasTex(1024, 512, (g, w, h) => {
@@ -1391,10 +1399,79 @@ const VISTA = (() => {
   });
   const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false, fog: false, opacity: 0 }));
   /* face it down the widest gap between the trunks east of the summit, so it is glimpsed, not hidden */
-  const occl = th => { let o = 0; for (const sd of SOLIDS){ const dx = sd.x - LOOKOUT.x, dz = sd.z - LOOKOUT.z, d = Math.hypot(dx, dz); if (d < 6 || d > 140) continue; const off = Math.abs(angDiff(Math.atan2(dz, dx), th)), half = Math.asin(Math.min(1, sd.r / d)); o += Math.max(0, Math.min(0.21, off + half) - Math.max(-0.21, off - half)); } return o; };
-  let az = 0, best = Infinity; for (let th = -1.2; th <= 1.2; th += 0.02){ const o = occl(th); if (o < best){ best = o; az = th; } }
+  const az = gapAzimuth(LOOKOUT.x, LOOKOUT.z, 0, 1.2);
   sp.scale.set(440, 220, 1); sp.position.set(LOOKOUT.x + Math.cos(az) * 340, groundH(LOOKOUT.x, LOOKOUT.z) + 78, LOOKOUT.z + Math.sin(az) * 340); sp.visible = false; scene.add(sp);
   return { sp, seen: false, az };
+})();
+/* and toward the sun, from the same summit: the sun lower than it looks from the floor, red over ridges folded into each other */
+const SUNDOWN = (() => {
+  const tex = canvasTex(1024, 512, (g, w, h) => {
+    const sx = w * 0.56, sy = h * 0.6, halo = g.createRadialGradient(sx, sy, 0, sx, sy, w * 0.34);
+    halo.addColorStop(0, 'rgba(255,150,96,0.75)'); halo.addColorStop(0.3, 'rgba(240,140,110,0.28)'); halo.addColorStop(1, 'rgba(230,170,150,0)');
+    g.fillStyle = halo; g.beginPath(); g.arc(sx, sy, w * 0.34, 0, TAU); g.fill();
+    g.fillStyle = '#e0482c'; g.beginPath(); g.arc(sx, sy, h * 0.085, 0, TAU); g.fill();
+    const ridge = (y0, amp, ph, col) => { g.fillStyle = col; g.beginPath(); g.moveTo(-10, h + 10); for (let x = -10; x <= w + 10; x += 8){ const u = x / w; g.lineTo(x, y0 - amp * (0.55 * Math.sin(u * 9 + ph) + 0.3 * Math.sin(u * 23 + ph * 2) + 0.15 * Math.sin(u * 51 + ph))); } g.lineTo(w + 10, h + 10); g.closePath(); g.fill(); };
+    ridge(h * 0.66, h * 0.07, 0.6, 'rgba(150,120,150,0.85)'); ridge(h * 0.72, h * 0.08, 2.1, 'rgba(120,100,128,0.9)');
+    ridge(h * 0.79, h * 0.07, 4.0, 'rgba(96,88,112,0.94)'); ridge(h * 0.86, h * 0.06, 5.3, 'rgba(74,74,92,0.97)');
+    g.globalCompositeOperation = 'destination-in';
+    const fade = g.createLinearGradient(0, h * 0.7, 0, h * 0.97); fade.addColorStop(0, 'rgba(0,0,0,1)'); fade.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = fade; g.fillRect(0, 0, w, h);
+    const sides = g.createLinearGradient(0, 0, w, 0); sides.addColorStop(0, 'rgba(0,0,0,0)'); sides.addColorStop(0.22, 'rgba(0,0,0,1)'); sides.addColorStop(0.78, 'rgba(0,0,0,1)'); sides.addColorStop(1, 'rgba(0,0,0,0)');
+    g.fillStyle = sides; g.fillRect(0, 0, w, h); g.globalCompositeOperation = 'source-over';
+  });
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthWrite: false, fog: false, opacity: 0 }));
+  const az = gapAzimuth(LOOKOUT.x, LOOKOUT.z, Math.atan2(sunDir.z, sunDir.x), 0.6);
+  sp.scale.set(420, 210, 1); sp.position.set(LOOKOUT.x + Math.cos(az) * 330, groundH(LOOKOUT.x, LOOKOUT.z) + 40, LOOKOUT.z + Math.sin(az) * 330); sp.visible = false; scene.add(sp);
+  return { sp, az };
+})();
+/* Roosevelt elk grazing the lookout clearing: a bull, two cows and a calf. They lift their heads when you come near, and move off if you keep coming */
+const HERD_HOME = { x: -13, z: -80 };
+function makeElk(bull, k){
+  const g = new THREE.Group(), coat = lam(0x8b6a48), dark = lam(0x4a3424), pale = lam(0xd9c49e), body = new THREE.Group(); g.add(body);
+  const ell = (mat, sx, sy, sz, x, y, z, parent) => { const m = new THREE.Mesh(new THREE.SphereGeometry(0.5, 14, 10), mat); m.scale.set(sx, sy, sz); m.position.set(x, y, z); (parent || body).add(m); return m; };
+  ell(coat, 1.0, 1.05, 2.1, 0, 1.45, 0); ell(pale, 0.78, 0.8, 0.5, 0, 1.52, -0.86);
+  const legs = [[-0.26, 0.7], [0.26, 0.7], [-0.26, -0.68], [0.26, -0.68]].map(([x, z]) => { const piv = new THREE.Group(); piv.position.set(x, 1.3, z); body.add(piv); const l = new THREE.Mesh(new THREE.CylinderGeometry(0.075, 0.05, 1.3, 7), dark); l.position.y = -0.65; piv.add(l); return piv; });
+  const neck = new THREE.Group(); neck.position.set(0, 1.72, 0.82); body.add(neck);
+  const nk = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.3, 0.95, 9), dark); nk.position.set(0, 0.32, 0.26); nk.rotation.x = 0.7; neck.add(nk);
+  const head = new THREE.Group(); head.position.set(0, 0.68, 0.56); neck.add(head);
+  ell(coat, 0.36, 0.4, 0.86, 0, 0, 0.18, head); ell(dark, 0.22, 0.22, 0.3, 0, -0.06, 0.56, head);
+  for (const sx of [-1, 1]){ const ear = new THREE.Mesh(new THREE.ConeGeometry(0.06, 0.24, 6), coat); ear.position.set(sx * 0.16, 0.2, -0.05); ear.rotation.z = -sx * 0.9; head.add(ear); }
+  if (bull){
+    const bone = lam(0xcdb894), tube = (pts, r) => head.add(new THREE.Mesh(new THREE.TubeGeometry(new THREE.CatmullRomCurve3(pts.map(p => new THREE.Vector3(...p))), 16, r, 5), bone));
+    for (const sx of [-1, 1]){
+      tube([[sx * 0.1, 0.18, 0], [sx * 0.45, 0.55, -0.25], [sx * 0.62, 1.05, -0.6], [sx * 0.55, 1.5, -0.95]], 0.04);
+      for (const [a, b, len] of [[0.25, 0.1, 0.4], [0.45, 0.35, 0.36], [0.62, 0.62, 0.32], [0.8, 0.95, 0.26]]){ const bx = sx * (0.18 + a * 0.5), by = 0.25 + b * 1.1, bz = -0.1 - a * 0.8; tube([[bx, by, bz], [bx + sx * 0.05, by + len * 0.7, bz + len * 0.55]], 0.025); }
+    }
+  }
+  g.scale.setScalar(k); scene.add(g);
+  return { g, body, legs, neck, head };
+}
+const ELK = [[true, 1.08, -2, 2], [false, 1, 3, -1], [false, 0.96, -5, -3], [false, 0.66, 1, 4]].map(([bull, k, dx, dz], i) => {
+  const e = { ...makeElk(bull, k), bull, x: HERD_HOME.x + dx, z: HERD_HOME.z + dz, yaw: rand(0, TAU), tx: 0, tz: 0, pause: rand(1, 6), state: 'graze', head: 0, gait: 0, ph: i * 1.7, flee: 0 };
+  e.tx = e.x; e.tz = e.z; return e;
+});
+/* marbled murrelets: small seabirds that fly in from the coast to nest high in the old trees; heard first, then a dark flicker going over */
+const MURRELETS = (() => {
+  const mat = lam(0x3b3128), birds = [];
+  for (let i = 0; i < 3; i++){
+    const g = new THREE.Group(), body = new THREE.Mesh(new THREE.SphereGeometry(0.5, 10, 8), mat); body.scale.set(0.14, 0.12, 0.34); g.add(body);
+    const wings = [-1, 1].map(sx => { const piv = new THREE.Group(); g.add(piv); const w = new THREE.Mesh(new THREE.SphereGeometry(0.5, 10, 6), mat); w.scale.set(0.5, 0.03, 0.15); w.position.x = sx * 0.24; piv.add(w); return piv; });
+    g.visible = false; scene.add(g); birds.push({ g, wings, off: [i * 1.4 - 1.4, rand(-0.6, 0.6), -i * 1.6] });
+  }
+  return { birds, fl: null, t: 50 + rand(0, 30), seen: false };
+})();
+/* ash over the station: tiny vector equilibria drifting down out of the fog */
+function veSolid(E){
+  const J = jitterbug(1, E), pos = [];
+  for (const t of J.tris) for (const v of t) pos.push(...v);
+  for (const q of J.squares) for (const [a, b, c] of [[0, 1, 2], [0, 2, 3]]) pos.push(...q[a], ...q[b], ...q[c]);
+  return pos;
+}
+const ASH = (() => {
+  const geo = new THREE.BufferGeometry(); geo.setAttribute('position', new THREE.Float32BufferAttribute(veSolid(0.065), 3)); geo.computeVertexNormals();
+  const n = 54, mesh = new THREE.InstancedMesh(geo, lam(0x9d978e, { emissive: 0x1e1c19, side: THREE.DoubleSide }), n); mesh.frustumCulled = false; scene.add(mesh);
+  const flakes = Array.from({ length: n }, () => ({ a: rand(0, TAU), r: Math.sqrt(rand(0, 1)) * 13, y: rand(0, 16), v: rand(0.25, 0.5), spin: rand(0.3, 1.2), ph: rand(0, TAU) }));
+  return { mesh, flakes };
 })();
 /* an albino redwood: ghost-white sprouts, rare and real, at the far edge */
 const ALBINO_OBJ = (() => {
@@ -1479,18 +1556,18 @@ const mastObjs = MASTS.map(ms => {
 });
 const _a = new THREE.Vector3(), _b = new THREE.Vector3(), _m = new THREE.Vector3(), _up = new THREE.Vector3(0, 1, 0), _q = new THREE.Quaternion();
 function updateMast(mo, t){
-  const ms = mo.ms, lean = (ms.slack * 0.1 + 0.004) * Math.sin(t * 0.8 + ms.ph) * (REDUCED ? 0.3 : 1), yaw = t * 0.12 + ms.ph;
+  const ms = mo.ms, qa = S.quake ? S.quake.amp : 0, lean = (ms.slack * 0.1 + 0.004) * Math.sin(t * 0.8 + ms.ph) * (REDUCED ? 0.3 : 1) + (REDUCED ? 0 : qa * 0.03 * Math.sin(t * 23 + ms.ph)), yaw = t * 0.12 + ms.ph;
   const N = MAST_GEO.nodes.map(v => new THREE.Vector3(v[0], v[1], v[2]).applyAxisAngle(_up, yaw).applyAxisAngle(new THREE.Vector3(0, 0, 1), lean));
   MAST_GEO.struts.forEach(([a, b], i) => { _a.copy(N[a]); _b.copy(N[b]); _m.subVectors(_b, _a); const len = _m.length(); const s = mo.struts[i]; s.position.copy(_a).addScaledVector(_m, 0.5); s.scale.set(1, len, 1); _q.setFromUnitVectors(_up, _m.normalize()); s.quaternion.copy(_q); });
   let k = 0; const SEG = mo.SEG;
   for (const [a, b] of MAST_GEO.cables){
-    const A = N[a], B = N[b], len = A.distanceTo(B), sag = ms.slack * len * 0.18;
+    const A = N[a], B = N[b], len = A.distanceTo(B), sag = ms.slack * len * 0.18 + qa * len * 0.025 * Math.sin(t * (ms.done ? 44 : 19) + a * 1.3 + b);
     for (let s = 0; s < SEG; s++){ for (const u of [s / SEG, (s + 1) / SEG]){ mo.cpos[k++] = lerp(A.x, B.x, u); mo.cpos[k++] = lerp(A.y, B.y, u) - sag * 4 * u * (1 - u); mo.cpos[k++] = lerp(A.z, B.z, u); } }
   }
   mo.cables.geometry.attributes.position.needsUpdate = true;
   const taut = 1 - ms.slack; mo.cables.material.color.setRGB(lerp(0.53, 0.86, taut), lerp(0.56, 0.68, taut), lerp(0.5, 0.35, taut));
   const topY = MAST_GEO.top + 0.4; mo.beacon.position.set(0, topY, 0); mo.bglow.position.set(0, topY, 0);
-  mo.beacon.material.color.setHex(ms.done ? 0xffd27a : 0x8c8c80); mo.bglow.material.opacity = ms.done ? 0.85 : 0;
+  mo.beacon.material.color.setHex(ms.done ? 0xffd27a : 0x8c8c80); mo.bglow.material.opacity = ms.done ? 0.85 + 0.15 * qa : 0; mo.bglow.scale.setScalar(3 + (ms.done ? qa * 2.5 : 0));
   mo.beacon.rotation.y = t * 0.6;
 }
 const slugObjs = SLUGS.map(s => {
@@ -1542,7 +1619,7 @@ const visitor = (() => {
 const S = {
   mode: 'title', t: 0, sound: true, pl: { x: SPAWN.x, z: SPAWN.z, y: 0, yaw: SPAWN.yaw, walkYaw: SPAWN.yaw, pitch: 0.04, eye: 1.68, phase: 0, moving: false, kneel: 0, kneelT: 0 },
   near: null, ritual: null, tune: null, fin: null, finaleDone: false, briefed: false, still: 0, glow: 0, glowTarget: 0,
-  bubbles: [], zone: '', zonesSeen: new Set(['Station HQ']), node: null, tally: { marks: [], vol: null, t: 0, shown: 0, next: 0, doneAt: -1 }, tallies: [], spoke: {}, chatT: 20, radioT: 45, saveT: 0, visitorT: 55, lastLook: 0,
+  bubbles: [], zone: '', zonesSeen: new Set(['Station HQ']), node: null, tally: { marks: [], vol: null, t: 0, shown: 0, next: 0, doneAt: -1 }, tallies: [], spoke: {}, quake: null, quakeT: 95, chatT: 20, radioT: 45, saveT: 0, visitorT: 55, lastLook: 0,
 };
 const AU = {
   ctx: null, master: null, bus: null, creekG: null, humG: null, ok: false,
@@ -1584,6 +1661,16 @@ const AU = {
     [[176, 0, 1.7], [146, 1.75, 1.6]].forEach(([f, d, dur]) => { const o = a.createOscillator(); o.type = 'sawtooth'; o.frequency.value = f; const e = a.createGain(); e.gain.setValueAtTime(0.0001, w + d); e.gain.exponentialRampToValueAtTime(0.022, w + d + 0.25); e.gain.setValueAtTime(0.022, w + d + dur - 0.4); e.gain.exponentialRampToValueAtTime(0.0001, w + d + dur); o.connect(e); e.connect(lp); o.start(w + d); o.stop(w + d + dur + 0.05); }); },
   knock(pan){ if (!this.ok) return; const a = this.ctx, w = a.currentTime + 0.05, p = a.createStereoPanner ? a.createStereoPanner() : null, out = a.createGain(); out.gain.value = 1; if (p){ p.pan.value = clamp(pan, -1, 1); out.connect(p); p.connect(this.bus); } else out.connect(this.bus);
     [0, 0.5].forEach(d => { const s = a.createBufferSource(); s.buffer = this.noise; const bp = a.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 900; bp.Q.value = 2; const g = a.createGain(); g.gain.setValueAtTime(0.18, w + d); g.gain.exponentialRampToValueAtTime(0.0001, w + d + 0.12); s.connect(bp); bp.connect(g); g.connect(out); s.start(w + d, Math.random()); s.stop(w + d + 0.14); this.tone(210, w + d, 0.15, 'triangle', 0.05, out); }); },
+  rumble(dur){ if (!this.ok) return; const a = this.ctx, w = a.currentTime, s = a.createBufferSource(); s.buffer = this.noise; s.loop = true; s.playbackRate.value = 0.35; const lp = a.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 95; const g = a.createGain(); g.gain.setValueAtTime(0.0001, w); g.gain.exponentialRampToValueAtTime(0.32, w + dur * 0.3); g.gain.exponentialRampToValueAtTime(0.0001, w + dur); s.connect(lp); lp.connect(g); g.connect(this.master); s.start(w); s.stop(w + dur + 0.1);
+    const o = a.createOscillator(); o.frequency.value = 36; const og = a.createGain(); og.gain.setValueAtTime(0.0001, w); og.gain.exponentialRampToValueAtTime(0.06, w + dur * 0.35); og.gain.exponentialRampToValueAtTime(0.0001, w + dur); o.connect(og); og.connect(this.master); o.start(w); o.stop(w + dur + 0.1); },
+  sing(notes, delay, gain){ if (!this.ok) return; const a = this.ctx, w = a.currentTime + delay; notes.forEach((f, i) => { for (const [mult, gg] of [[1, 0.05], [2, 0.014]]){ const o = a.createOscillator(); o.frequency.value = f * mult; const v = a.createOscillator(), vg = a.createGain(); v.frequency.value = 5 + i; vg.gain.value = f * 0.004; v.connect(vg); vg.connect(o.frequency); const e = a.createGain(); e.gain.setValueAtTime(0.0001, w + i * 0.18); e.gain.exponentialRampToValueAtTime(gg * gain, w + i * 0.18 + 0.7); e.gain.exponentialRampToValueAtTime(0.0001, w + i * 0.18 + 6.5); o.connect(e); e.connect(this.bus); o.start(w + i * 0.18); v.start(w + i * 0.18); o.stop(w + 7); v.stop(w + 7); } }); },
+  rattle(gain){ if (!this.ok) return; const a = this.ctx; for (let i = 0; i < 9; i++){ const w = a.currentTime + 0.4 + i * 0.28 + Math.random() * 0.15, s = a.createBufferSource(); s.buffer = this.noise; const bp = a.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 300 + Math.random() * 300; bp.Q.value = 4; const g = a.createGain(); g.gain.setValueAtTime(0.09 * gain, w); g.gain.exponentialRampToValueAtTime(0.0001, w + 0.16); s.connect(bp); bp.connect(g); g.connect(this.bus); s.start(w, Math.random()); s.stop(w + 0.18); } },
+  bugle(pan, gain){ if (!this.ok) return; const a = this.ctx, w = a.currentTime + 0.05, p = a.createStereoPanner ? a.createStereoPanner() : null, out = a.createGain(); out.gain.value = gain; if (p){ p.pan.value = clamp(pan, -1, 1); out.connect(p); p.connect(this.bus); } else out.connect(this.bus);
+    const o = a.createOscillator(); o.type = 'sawtooth'; o.frequency.setValueAtTime(520, w); o.frequency.exponentialRampToValueAtTime(1850, w + 1.1); o.frequency.setValueAtTime(1850, w + 1.9); o.frequency.exponentialRampToValueAtTime(760, w + 2.5);
+    const bp = a.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 1500; bp.Q.value = 1.6; const e = a.createGain(); e.gain.setValueAtTime(0.0001, w); e.gain.exponentialRampToValueAtTime(0.05, w + 0.3); e.gain.setValueAtTime(0.05, w + 2.0); e.gain.exponentialRampToValueAtTime(0.0001, w + 2.6); o.connect(bp); bp.connect(e); e.connect(out); o.start(w); o.stop(w + 2.7);
+    for (let i = 0; i < 3; i++){ const t0 = w + 2.8 + i * 0.32, s = a.createBufferSource(); s.buffer = this.noise; const lp = a.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 220; const g = a.createGain(); g.gain.setValueAtTime(0.18, t0); g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.2); s.connect(lp); lp.connect(g); g.connect(out); s.start(t0, Math.random()); s.stop(t0 + 0.22); } },
+  keer(pan){ if (!this.ok) return; const a = this.ctx, p = a.createStereoPanner ? a.createStereoPanner() : null, out = a.createGain(); out.gain.value = 1; if (p){ p.pan.value = clamp(pan, -1, 1); out.connect(p); p.connect(this.bus); } else out.connect(this.bus);
+    [0, 0.42, 0.84].forEach(d => { const w = a.currentTime + 0.05 + d, o = a.createOscillator(); o.type = 'triangle'; o.frequency.setValueAtTime(3100, w); o.frequency.exponentialRampToValueAtTime(2300, w + 0.24); const e = a.createGain(); e.gain.setValueAtTime(0.0001, w); e.gain.exponentialRampToValueAtTime(0.03, w + 0.03); e.gain.exponentialRampToValueAtTime(0.0001, w + 0.26); o.connect(e); e.connect(out); o.start(w); o.stop(w + 0.3); }); },
   count(n){ if (!this.ok) return; const w = this.ctx.currentTime; this.tone(1180 + (n % 4) * 90, w, 0.07, 'triangle', 0.045); this.tone(2360, w, 0.03, 'sine', 0.012); },
   shimmer(){ if (!this.ok) return; [1174.66, 1479.98, 1760, 2349.32].forEach((f, i) => this.bell(f, i * 0.35, 0.022, 4.5)); },
   crackle(){ if (!this.ok) return; const a = this.ctx, w = a.currentTime, s = a.createBufferSource(); s.buffer = this.noise; const bp = a.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 2300; bp.Q.value = 1.1; const g = a.createGain(); g.gain.setValueAtTime(0.0001, w); g.gain.exponentialRampToValueAtTime(0.03, w + 0.03); g.gain.setValueAtTime(0.03, w + 0.32); g.gain.exponentialRampToValueAtTime(0.0001, w + 0.6); s.connect(bp); bp.connect(g); g.connect(this.master); s.start(w, Math.random()); s.stop(w + 0.65); },
@@ -1599,6 +1686,7 @@ const LINES = {
   zone: { 'Chinook Creek': [MADRONE, 'Fish are running.'], 'Public Works Yard': [MADRONE, 'Public Works is ahead of schedule again. Show-offs.'], 'Sorrel Flats': [SITKA, 'Slug country. Watch your boots.'], 'Lookout Rise': [SITKA, 'Lamp’s lit up top.'], 'Ghost Forest': [MADRONE, 'These cedars drowned standing up. Long time ago now.'], 'Cathedral Ring': [SITKA, 'Keep your voice down in here.'] },
   resolved: ['Better.', 'Quiet again.', 'Like it was never here.', 'Hear that? Nothing. Good.'],
   chief: ['Kettle’s on.', 'Radio says fog until further notice.', 'Mind the slug on the step.', 'You’ve got moss on your hat.', 'Bring the thermos back this time.'],
+  quake: ['Station to all patrols. Small one, deep and slow. Over.', 'Station to all patrols. Felt it here too. Kettle walked across the stove. Over.', 'Lookout reports the lamp swung and settled. Over.'],
   radio: ['Station to all patrols. Fog holding over all four ridges. Over.', 'Lookout reports the lamp is lit. The lamp is always lit. Over.', 'Ferry reports a whale under the Columbia bar. Over.', 'Public Works asks patrols to step around the frame. Over.', 'Weather: fog, then fog. Visibility one tree. Over.', 'Lookout reports a tall visitor on the ridge. Visitor declined to sign the log. Over.', 'Anyone seen the Chief’s mug? Over.'],
 };
 const RADIO = { name: 'Radio', radio: true };
@@ -1964,6 +2052,7 @@ function update(dt){
   pl.eye = lerp(1.68, 0.72, pl.kneel);
   camera.position.set(pl.x, pl.y + pl.eye + bob, pl.z);
   camera.rotation.set(pl.pitch - pl.kneel * 0.35, pl.yaw, 0);
+  if (S.quake && !REDUCED){ const a = S.quake.amp, t2 = S.t; camera.position.x += a * 0.02 * Math.sin(t2 * 37); camera.position.y += a * 0.025 * Math.sin(t2 * 29 + 1); camera.rotation.z = a * 0.006 * Math.sin(t2 * 23); }
   lanternRig.position.y = (!REDUCED && pl.moving) ? Math.sin(pl.phase) * 0.012 : Math.sin(t * 1.3) * 0.004;
   myLantern.rotation.y = t * 0.8;
   /* sky and fog follow the camera; fog breathes with the Ring and thickens at the grove's edge */
@@ -1990,10 +2079,12 @@ function update(dt){
   if (S.node && !S.spoke.mark){ S.spoke.mark = true; setTimeout(() => say(SITKA, 'Mark four.'), 700); }
   const big = IVM_BIG.userData, bigT = S.fin ? sstep(3, 7, S.fin.t) * (1 - sstep(13, 16.5, S.fin.t)) : 0;
   big.lines.material.opacity = bigT * 0.9; big.pts.material.opacity = bigT * (0.7 + 0.3 * Math.sin(t * 2)); IVM_BIG.visible = bigT > 0.01; IVM_BIG.rotation.y = t * 0.02;
-  updVisitor(dt);
+  updVisitor(dt); updQuake(dt); updElk(dt); updMurrelets(dt); updAsh(dt);
   { const k = S.mode === 'play' || S.mode === 'ledger' ? sstep(9.5, 12.5, pl.y) * sstep(16, 7, hyp(pl.x - LOOKOUT.x, pl.z - LOOKOUT.z)) : 0, m = VISTA.sp.material;
     m.opacity = lerp(m.opacity, k * 0.78, Math.min(1, dt * 0.45)); VISTA.sp.visible = m.opacity > 0.01;
-    if (k > 0.8 && !VISTA.seen){ VISTA.seen = true; setTimeout(() => say(MADRONE, 'Mountain’s out.'), 2200); } }
+    if (k > 0.8 && !VISTA.seen){ VISTA.seen = true; setTimeout(() => say(MADRONE, 'Mountain’s out.'), 2200); }
+    const sm = SUNDOWN.sp.material; sm.opacity = lerp(sm.opacity, k * 0.9, Math.min(1, dt * 0.45)); SUNDOWN.sp.visible = sm.opacity > 0.01;
+    sun.material.opacity = 0.9 * (1 - sm.opacity); scene.fog.color.lerp(SUN_RED, sm.opacity * 0.18); scene.background.copy(scene.fog.color); sky.material.uniforms.horizon.value.copy(scene.fog.color); }
   /* world motion */
   for (const m of mists){ const u = m.userData; m.position.x += u.v * dt; if (m.position.x > 120) m.position.x = -120; if (m.position.x < -120) m.position.x = 120; m.position.y = groundH(m.position.x, m.position.z) + u.y; m.material.opacity = u.base * (0.8 + 0.35 * breath * amp) * (1 - lift * 0.6) * (1 - S.glow * 0.3); }
   for (const r of rays){ _v.set(camera.position.x - r.position.x, 0, camera.position.z - r.position.z); r.rotation.set(0, Math.atan2(_v.x, _v.z), 0.22); const d = _v.length(); r.material.opacity = r.userData.base * (0.7 + 0.3 * Math.sin(t * 0.35 + r.userData.ph)) * sstep(130, 30, d) * (1 + S.glow * 0.7 + lift); }
@@ -2042,6 +2133,63 @@ function update(dt){
   let hum = 0; for (const c of CUBES) if (!c.done) hum = Math.max(hum, clamp(1 - hyp(c.x - pl.x, c.z - pl.z) / 16, 0, 1));
   AU.levels(S.mode === 'title' ? 0 : creekL, (S.mode === 'title' ? 0 : hum * hum * 0.045) * (S.ritual ? 1 - S.ritual.c.p : 1));
   AU.tick(dt);
+}
+/* tremor: the ground hums for a few seconds; taut masts ring their chords, slack ones rattle */
+function startQuake(){
+  S.quake = { t: 0, dur: 6.5, amp: 0 }; AU.rumble(6.5);
+  for (const mo of mastObjs){ const d = hyp(mo.ms.x - S.pl.x, mo.ms.z - S.pl.z), gain = clamp(1.2 - d / 90, 0.2, 1); if (mo.ms.done) AU.sing(mo.ms.notes, 0.9, gain); else AU.rattle(gain); }
+  const first = !S.spoke.quake; S.spoke.quake = true;
+  setTimeout(() => say(MADRONE, first ? 'Feel that?' : pick(['There she goes.', 'Again.', 'Easy, easy.'])), 1600);
+  if (first) setTimeout(() => say(SITKA, MASTS.some(m => m.done) ? 'Masts heard it.' : 'Hear the masts rattle?'), 4300);
+  setTimeout(() => { AU.crackle(); say(RADIO, pick(LINES.quake), 5); }, 9500);
+}
+function updQuake(dt){
+  if (!S.quake){ if (S.mode !== 'play') return; S.quakeT -= dt; if (S.quakeT <= 0) startQuake(); return; }
+  const Q = S.quake; Q.t += dt; Q.amp = Math.pow(Math.sin(Math.PI * clamp(Q.t / Q.dur, 0, 1)), 1.5);
+  if (Q.t >= Q.dur){ S.quake = null; S.quakeT = 180 + Math.random() * 120; }
+}
+function updElk(dt){
+  const pl = S.pl, dHerd = hyp(pl.x - HERD_HOME.x, pl.z - HERD_HOME.z); if (dHerd > 110 && !S.elkBugleT) return;
+  S.elkBugleT = (S.elkBugleT || 30) - dt;
+  for (const e of ELK){
+    const d = hyp(pl.x - e.x, pl.z - e.z), toPl = Math.atan2(pl.x - e.x, pl.z - e.z);
+    if (e.state !== 'flee' && d < 10 && S.mode === 'play'){ e.state = 'flee'; e.flee = 4 + Math.random() * 1.5; }
+    else if (e.state === 'graze' && d < 21) e.state = 'alert';
+    else if (e.state === 'alert' && d > 26) e.state = 'graze';
+    let sp = 0, wantYaw = e.yaw, headTarget = 0;
+    if (e.state === 'flee'){ e.flee -= dt; wantYaw = toPl + Math.PI + Math.sin(e.ph + S.t * 0.4) * 0.3; sp = 4.2; headTarget = 1; if (e.flee <= 0){ e.state = 'alert'; e.tx = e.x; e.tz = e.z; } }
+    else if (e.state === 'alert'){ wantYaw = toPl; headTarget = 1; }
+    else { e.pause -= dt; const tdx = e.tx - e.x, tdz = e.tz - e.z; if (hyp(tdx, tdz) < 0.4){ if (e.pause <= 0){ const a = rand(0, TAU), r = rand(0, 8); e.tx = HERD_HOME.x + Math.cos(a) * r; e.tz = HERD_HOME.z + Math.sin(a) * r; e.pause = rand(3, 9); } } else { wantYaw = Math.atan2(tdx, tdz); sp = 0.35; } headTarget = sp > 0 ? 0.35 : 0; }
+    e.yaw += angDiff(wantYaw, e.yaw) * Math.min(1, dt * (e.state === 'flee' ? 4 : 1.2));
+    if (sp > 0){ e.x += Math.sin(e.yaw) * sp * dt; e.z += Math.cos(e.yaw) * sp * dt; collide(e, 0.9); const dh = hyp(e.x - LOOKOUT.x, e.z - LOOKOUT.z); if (dh > 30){ e.x = LOOKOUT.x + (e.x - LOOKOUT.x) * 30 / dh; e.z = LOOKOUT.z + (e.z - LOOKOUT.z) * 30 / dh; } e.gait += sp * dt * 2.2; }
+    e.head = lerp(e.head, headTarget, Math.min(1, dt * 2.5));
+    e.g.position.set(e.x, groundH(e.x, e.z), e.z); e.g.rotation.y = e.yaw;
+    e.neck.rotation.x = lerp(1.05, -0.15, e.head) + (e.head < 0.2 && !REDUCED ? Math.sin(S.t * 1.3 + e.ph) * 0.06 : 0);
+    const sw = sp > 0 ? Math.sin(e.gait) * (e.state === 'flee' ? 0.55 : 0.22) : 0; e.legs.forEach((l, i) => { l.rotation.x = (i === 0 || i === 3 ? sw : -sw); });
+    e.body.position.y = e.state === 'flee' && !REDUCED ? Math.abs(Math.sin(e.gait)) * 0.08 : 0;
+  }
+  if (S.mode === 'play' && dHerd < 75 && S.elkBugleT <= 0){ S.elkBugleT = 45 + Math.random() * 45; const b = ELK[0], rx = Math.cos(pl.yaw), rz = -Math.sin(pl.yaw), dd = Math.max(1, hyp(b.x - pl.x, b.z - pl.z)); AU.bugle(((b.x - pl.x) * rx + (b.z - pl.z) * rz) / dd, clamp(1.4 - dHerd / 70, 0.25, 1)); }
+  if (!S.spoke.elk && dHerd < 34 && S.mode === 'play'){ S.spoke.elk = true; setTimeout(() => say(MADRONE, 'Easy. Let them graze.'), 900); }
+}
+function updMurrelets(dt){
+  const M = MURRELETS, pl = S.pl;
+  if (!M.fl){ if (S.mode !== 'play') return; M.t -= dt; if (M.t > 0) return;
+    const z0 = pl.z + rand(-14, 14), y0 = groundH(pl.x, pl.z) + rand(17, 24); M.fl = { x: pl.x - 140, z: z0, y: y0, dz: rand(-0.15, 0.15), called: false }; M.birds.forEach(b => { b.g.visible = true; }); }
+  const F = M.fl; F.x += 21 * dt; F.z += F.dz * 21 * dt;
+  M.birds.forEach((b, i) => { b.g.position.set(F.x + b.off[2], F.y + b.off[1] + Math.sin(S.t * 3 + i) * 0.4, F.z + b.off[0]); b.g.rotation.set(0, Math.PI / 2 + Math.atan(F.dz), 0); const fl = Math.sin(S.t * 52 + i * 2) * 0.7; b.wings[0].rotation.z = fl; b.wings[1].rotation.z = -fl; });
+  const dx = F.x - pl.x;
+  if (!F.called && dx > -75){ F.called = true; const rx = Math.cos(pl.yaw), rz = -Math.sin(pl.yaw); AU.keer(clamp(((F.x - pl.x) * rx + (F.z - pl.z) * rz) / 75, -1, 1)); if (!M.seen){ M.seen = true; setTimeout(() => say(SITKA, 'Murrelets. Headed for the old ones.'), 1400); } }
+  if (F.x > pl.x + 150){ M.fl = null; M.birds.forEach(b => { b.g.visible = false; }); M.t = 75 + Math.random() * 60; }
+}
+function updAsh(dt){
+  const near = hyp(S.pl.x - HQ.x, S.pl.z - HQ.z) < 60; ASH.mesh.visible = near; if (!near) return;
+  const m = new THREE.Matrix4(), q = new THREE.Quaternion(), e = new THREE.Euler(), v = new THREE.Vector3(), sc = new THREE.Vector3();
+  ASH.flakes.forEach((f, i) => {
+    f.y -= f.v * dt * (REDUCED ? 0.6 : 1); if (f.y < 0){ f.y = 16; f.a = rand(0, TAU); f.r = Math.sqrt(rand(0, 1)) * 13; }
+    const x = HQ.x + Math.cos(f.a) * f.r + Math.sin(S.t * 0.3 + f.ph) * 0.8, z = HQ.z + Math.sin(f.a) * f.r + Math.cos(S.t * 0.23 + f.ph) * 0.8, gy = groundH(x, z);
+    e.set(S.t * f.spin + f.ph, S.t * f.spin * 0.7, f.ph); q.setFromEuler(e); const s = f.y < 1.5 ? f.y / 1.5 : 1; sc.set(s, s, s); v.set(x, gy + 0.05 + f.y, z); m.compose(v, q, sc); ASH.mesh.setMatrixAt(i, m);
+  });
+  ASH.mesh.instanceMatrix.needsUpdate = true;
 }
 /* the visitor: stands at the fog's edge, off to one side; gone when you look straight at it */
 function updVisitor(dt){
@@ -2159,6 +2307,11 @@ window.__fs = {
   selfTest(){ return { passed: SELFTEST.checks.filter(c => c.passed).length, total: SELFTEST.checks.length, names: SELFTEST.checks.map(c => c.name) }; },
   ringVolume(){ return VE.vol; },
   gaugeMarks(){ return GAUGE_MARKS.slice(); },
+  quake(){ startQuake(); return true; },
+  quakeState(){ return S.quake ? { t: +S.quake.t.toFixed(2), amp: +S.quake.amp.toFixed(3) } : null; },
+  elk(){ return ELK.map(e => ({ bull: e.bull, state: e.state, x: +e.x.toFixed(1), z: +e.z.toFixed(1) })); },
+  murrelets(callIn){ if (callIn) MURRELETS.t = 0; return MURRELETS.fl ? { x: +MURRELETS.fl.x.toFixed(1), y: +MURRELETS.fl.y.toFixed(1), z: +MURRELETS.fl.z.toFixed(1) } : { waiting: +MURRELETS.t.toFixed(1) }; },
+  sundown(){ return { opacity: +SUNDOWN.sp.material.opacity.toFixed(3), sun: +sun.material.opacity.toFixed(3), at: SUNDOWN.sp.position.toArray().map(v => +v.toFixed(1)) }; },
   vista(){ return { opacity: +VISTA.sp.material.opacity.toFixed(3), seen: VISTA.seen, y: +S.pl.y.toFixed(2), at: VISTA.sp.position.toArray().map(v => +v.toFixed(1)) }; },
   lattice(){ return { opacity: +IVM.userData.lines.material.opacity.toFixed(3), nodes: IVM.userData.nodes.length, at: IVM.position.toArray(), node: S.node && S.node.q, marks: S.tally.marks.map(m => m.q), vol: S.tally.vol, shown: S.tally.shown, tallies: S.tallies.slice() }; },
   lookAt(x, y, z){ const dx = x - camera.position.x, dy = y - camera.position.y, dz = z - camera.position.z; S.pl.yaw = Math.atan2(-dx, -dz); S.pl.pitch = Math.atan2(dy, Math.hypot(dx, dz)); },

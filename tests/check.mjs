@@ -157,8 +157,8 @@ ok(TV.IVM_NEIGHBOR_MOVES.every(m => near(Math.hypot(...qcCart(m)), 2)), 'convent
 const block = path => src.match(new RegExp(`/\\* ==== splice ${path.replace(/[.*+?^${}()|[\]\\/]/g, '\\$&')} ==== \\*/\\n[\\s\\S]*?/\\* ==== end splice [^\\n]*`))[0];
 const fn = name => grab(new RegExp(`function ${name}\\([\\s\\S]*?\\n}\\n`), name);
 const game = {}; vm.createContext(game);
-vm.runInContext([...SPLICES['src/field-station.html'].map(block), fn('ivmLattice'), fn('latticeAddress'), fn('jitterVolume'), fn('jitterbug'),
-  'this.out = { ivmLattice, latticeAddress, jitterVolume, jitterbug, aceTetravolumeExact, IVM_NEIGHBOR_MOVES };'].join('\n'), game);
+vm.runInContext([...SPLICES['src/field-station.html'].map(block), fn('ivmLattice'), fn('latticeAddress'), fn('jitterVolume'), fn('jitterbug'), fn('veSolid'),
+  'this.out = { ivmLattice, latticeAddress, jitterVolume, jitterbug, veSolid, aceTetravolumeExact, IVM_NEIGHBOR_MOVES };'].join('\n'), game);
 const G = game.out, EDGE = 2.4, LAT = G.ivmLattice(11, EDGE);
 const addr = LAT.nodes.map(p => G.latticeAddress(...p, EDGE));
 ok(addr.every(Boolean), `lattice: all ${LAT.nodes.length} nodes of the stillness lattice have whole QuadCraft addresses`);
@@ -192,6 +192,12 @@ const rs = Array.from({ length: 38 }, (_, i) => 0.02 + i * 0.025), hullOK = rs.e
 ok(hullOK, 'Ring gauge: between the stations the reading is the struts’ convex hull, checked against an independent hull');
 const sweep = Array.from({ length: 1001 }, (_, i) => ({ r: i / 1000, v: jv(i / 1000) })), top = sweep.reduce((a, b) => (b.v > a.v ? b : a));
 ok(top.v > 20 && top.r > 1 / PHI && top.r < 1, `Ring gauge: the hull swells to ${top.v.toFixed(3)} at a/b = ${top.r.toFixed(3)}, between the icosahedron and the vector equilibrium, before it falls`);
+{ // the ash over the station: each flake is a vector equilibrium of 20 tetravolumes
+  const AE = 0.065, flat = G.veSolid(AE), tris = []; for (let i = 0; i < flat.length; i += 9) tris.push([flat.slice(i, i + 3), flat.slice(i + 3, i + 6), flat.slice(i + 6, i + 9)]);
+  const edgesOK = tris.every(t => [[0, 1], [1, 2], [2, 0]].every(([a, b]) => { const l = dist(t[a], t[b]); return near(l, AE, 1e-12) || near(l, AE * Math.SQRT2, 1e-12); }));
+  const V = tris.reduce((s, [a, b, c]) => s + Math.abs(det3(a, b, c)) / 6, 0) / (AE ** 3 / (6 * Math.SQRT2));
+  ok(tris.length === 20 && edgesOK && near(V, 20, 1e-9), 'ash: each flake is a vector equilibrium, 8 triangles and 6 squares closing 20 tetravolumes');
+}
 { // cube 3 again, now with quadrays and the 5x5 determinant: QuadCraft's basis tips are the game's TET_V
   const k = 1 / Math.SQRT2, q = p => { const r = QC.Quadray.fromCartesian(p[0] * k, p[1] * k, p[2] * k); return [r.a, r.b, r.c, r.d]; };
   const t1 = TV.aceTetravolume(...g.TET_V.map(q)), corner4 = [[-1, -1, -1], [1, 1, -1], [1, -1, 1], [-1, 1, 1]].map(c => TV.aceTetravolume(q(c), ...g.TET_V.filter(v => dist(v, c) < 2.9).map(q)));

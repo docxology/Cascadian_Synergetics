@@ -48,9 +48,13 @@ Every node has an address: its quadray in QuadCraft's convention, with one latti
 
 Mark four nodes and the tetrahedron between them lights up while a brass counter clicks once for each tetravolume, using QuadMath's exact 5×5 determinant on the four addresses. However the four are chosen, the count is a whole number, or 0 when they lie in one plane. Integer quadrays alone would not guarantee that; the lattice does. [imports.md](imports.md#why-every-count-is-whole) has the reason, and the notebook keeps the last two dozen counts.
 
+## Ash
+
+The ash that drifts over the station falls in tiny vector equilibria, built from the jitterbug at its widest: eight triangles and six squares, 20 tetravolumes each. The checks rebuild a flake and measure it.
+
 ## Tensegrity masts
 
-Each mast is three stacked three-strut prisms. In every stage the top triangle is turned 150° from the bottom one; struts join each bottom corner to its turned top corner, and cables close both triangles and run from each bottom corner to its nearer top corner. No strut touches another. Slack masts sag and lean; each clean pluck takes up a third of the slack.
+Each mast is three stacked three-strut prisms. In every stage the top triangle is turned 150° from the bottom one; struts join each bottom corner to its turned top corner, and cables close both triangles and run from each bottom corner to its nearer top corner. No strut touches another. Slack masts sag and lean; each clean pluck takes up a third of the slack. When the ground hums, a taut mast's cables shiver fast and it rings its three notes as a chord; a slack one rattles.
 
 ## Geodesic domes
 

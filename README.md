@@ -37,7 +37,11 @@ The field station adds things that are never named:
 - Mark four nodes and the tetrahedron between them lights while a brass counter clicks out its volume. It always comes out whole, and the notebook keeps the counts.
 - Inside the Ring, the compass rim becomes a dial that follows the jitterbug's volume as it breathes.
 - A brass rail by the station door carries eight beads, one for each of the station's self-checks, lit when the check passes.
-- From the top of Lookout Rise, a mountain stands up out of the fog with a lenticular cloud on its summit.
+- From the top of Lookout Rise, a mountain stands up out of the fog with a lenticular cloud on its summit. Turn toward the sun and it is lower than it looks from the floor: red, over ridges folded into each other.
+- Every few minutes the ground hums. Re-tensioned masts ring their chords and slack ones rattle, and the radio reports in.
+- Roosevelt elk graze the lookout clearing. They lift their heads when you come near and move off if you keep coming; the bull bugles.
+- Marbled murrelets cross overhead on their way in from the coast. You hear them first.
+- Ash drifts down over the station, each flake a tiny vector equilibrium.
 - Sometimes a tall figure waits at the fog's edge, off to one side, after two wood knocks. Look straight at it and it is gone.
 - At the far edge of the grove there is a white redwood.
 
@@ -109,8 +113,9 @@ They also check the geometry, using the exact functions the field station runs, 
 - the cube built on a tetrahedron's edges holds 3 tetravolumes: the tetrahedron plus four corner pieces of one half each, measured both in XYZ and with the 5×5 determinant
 - every node of the stillness lattice has a whole address, every strut is one of QuadMath's twelve moves, and 400 random four-node marks all count whole, each matching the tetrahedron's XYZ volume
 - the Ring's dial reads 20, 5√2 φ² and 4 at the three stations and the convex hull between them
+- each flake of ash is a vector equilibrium closing 20 tetravolumes
 
-In a browser, both games expose a small test hook (`window.__oss` for the storybook, `window.__fs` for the field station) with `step`, `teleport` and checks such as `__fs.ivmCheck()`, which confirms every interior lattice node has twelve equal edges, `__fs.lattice()` for the gazed node, the marks and the count, `__fs.ringVolume()`, `__fs.selfTest()` and `__fs.vista()`.
+In a browser, both games expose a small test hook (`window.__oss` for the storybook, `window.__fs` for the field station) with `step`, `teleport` and checks such as `__fs.ivmCheck()`, which confirms every interior lattice node has twelve equal edges, `__fs.lattice()` for the gazed node, the marks and the count, `__fs.ringVolume()`, `__fs.selfTest()`, `__fs.vista()`, `__fs.sundown()`, `__fs.quake()`, `__fs.elk()` and `__fs.murrelets(true)`.
 
 ## Editing and republishing
 

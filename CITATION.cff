@@ -45,4 +45,12 @@ references:
     repository-code: "https://github.com/docxology/QuadMath"
     license: Apache-2.0
     commit: 6e1f004e2a541bae374da973f7821d616cef66b1
+  - type: report
+    title: "QuadMath: Analytical Review of Quadray Coordinates (4D)"
+    authors:
+      - family-names: Friedman
+        given-names: Daniel Ari
+        orcid: "https://orcid.org/0000-0001-6232-9096"
+    year: 2025
     doi: 10.5281/zenodo.16887791
+    notes: "The QuadMath manuscript's version-1 record on Zenodo."
