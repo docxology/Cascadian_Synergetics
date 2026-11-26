@@ -23,7 +23,7 @@ CI is local only: `node tools/ci.mjs` checks a clean export of a commit, and `.g
 
 ## The manuscript
 
-`docs/manuscript/` is a paper about this repository, rendered through docxology/template by `python3 scripts/build.py` (see `docs/manuscript/README.md`). Its rules are in `docs/manuscript/AGENTS.md`; the two that bite most often:
+`docs/manuscript/` is a paper about this repository, rendered through docxology/template by `python3 scripts/build.py` (see the [pinned build guide](docs/manuscript-build.md)). Its rules are in `docs/manuscript/AGENTS.md`; the two that bite most often:
 
 - No number is typed in it. Every number is a `{{TOKEN}}` computed in `tools/facts.mjs` (`node tools/facts.mjs --tokens` lists them), and `node tools/facts.mjs --check` names the file and line of any typed one.
 - The tracked PDF and `output/pdf/Cascadian_Synergetics_combined.json` must come from the current sources. Changing the manuscript, the figure script, the screenshots in `docs/images/`, or any code a token or figure is computed from, means rendering again and committing the PDF with the change. Local CI cannot render (it has no TeX), so it compares digests instead and fails on a stale PDF.

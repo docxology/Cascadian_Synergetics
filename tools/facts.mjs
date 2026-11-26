@@ -32,7 +32,7 @@ export const TALLY_SAMPLES = 400;
 export const SWEEP_POINTS = 1001;
 
 /* The Markdown whose numbers are checked. */
-export const DOCS = ['README.md', 'AGENTS.md', 'docs/imports.md', 'docs/synergetics.md', 'docs/design.md', 'docs/cascadia.md', 'CHANGELOG.md'];
+export const DOCS = ['README.md', 'AGENTS.md', 'docs/imports.md', 'docs/synergetics.md', 'docs/design.md', 'docs/cascadia.md', 'docs/development.md', 'CHANGELOG.md'];
 
 /* The manuscript, its rendered PDF, and the record binding the one to the other. */
 export const MANUSCRIPT = 'docs/manuscript';
