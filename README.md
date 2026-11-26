@@ -88,79 +88,17 @@ scripts/                   the manuscript build: figures, tokens, render, render
 output/pdf/                the rendered paper and the digests binding it to its sources
 ```
 
-## Local CI
+## Development
 
-There is no GitHub Actions workflow: nothing runs on GitHub and nothing is billed. The gate runs on your machine with Node 20 or newer and no packages to install.
-
-```bash
-node tools/ci.mjs
-```
-
-It exports the committed `HEAD` into a temporary folder, runs every check there, and prints a verdict bound to that commit and tree, so uncommitted edits can neither help nor hurt it. If clones of QuadCraft and QuadMath sit beside this checkout, it also confirms from them that the locked upstream commits hold exactly the vendored bytes, and reports that step as verified, failed or skipped. `--rev <sha>` checks another commit. `--receipt-dir <folder>` also writes the verdict to `<folder>/<commit>.json`; the folder must be outside the checkout.
-
-To run it automatically before every push:
-
-```bash
-git config core.hooksPath .githooks
-```
-
-While editing, check the working tree directly and rebuild the standalone pages:
-
-```bash
-node tests/check.mjs
-```
-
-```bash
-node tools/build.mjs
-```
-
-The checks confirm that both inline scripts parse, that each source keeps the artifact rules (title near the top, no document skeleton, scripts only from cdnjs, no blocking dialogs), and that the standalone pages and spliced blocks match a fresh build. For the imports they confirm that:
-
-- every vendored file has the Git blob id its lock names, and each spliced block is byte-identical to its file
-- the fixture was computed by the vendored QuadMath, and the JavaScript port reproduces all of it exactly: <!-- n:fixtureCases -->245<!-- /n --> tetravolumes, <!-- n:fixtureDets -->60<!-- /n --> determinants, the twelve neighbour moves
-- QuadCraft's own eight self-checks pass, and the three quadray conventions in play (QuadCraft's, QuadMath's and the compass's) relate exactly as [docs/imports.md](docs/imports.md) says
-
-They also check the geometry, using the exact functions the field station runs, with the imported code as spliced:
-
-- the four quadray rays are unit length, sum to zero, and meet at the tetrahedral angle
-- quadray coordinates come out non-negative with one zero, and convert back exactly
-- the jitterbug's eight triangles stay equilateral, passing through the vector equilibrium, the icosahedron and the octahedron
-- the cube built on a tetrahedron's edges holds 3 tetravolumes: the tetrahedron plus four corner pieces of one half each, measured both in XYZ and with the 5×5 determinant
-- every node of the stillness lattice has a whole address, every strut is one of QuadMath's twelve moves, and <!-- n:tallySamples -->400<!-- /n --> random four-node marks all count whole, each matching the tetrahedron's XYZ volume
-- the Ring's dial reads 20, 5√2 φ² and 4 at the three stations and the convex hull between them
-- each flake of ash is a vector equilibrium closing 20 tetravolumes
-
-In a browser, both games expose a small test hook (`window.__oss` for the storybook, `window.__fs` for the field station) with `step`, `teleport` and checks such as `__fs.ivmCheck()`, which confirms every interior lattice node has twelve equal edges, `__fs.lattice()` for the gazed node, the marks and the count, `__fs.ringVolume()`, `__fs.selfTest()`, `__fs.vista()`, `__fs.sundown()`, `__fs.quake()`, `__fs.elk()`, `__fs.murrelets(true)`, `__fs.mail()`, `__fs.car(true)`, `__fs.roadside()` and `await __fs.audioCheck(name, args, seconds, times)`, which renders one of the game's sounds offline and reports its loudness and strongest frequency at each given time.
+The [documentation index](docs/README.md) links to the game build, geometry,
+local CI, contributed code, and paper source. See
+[Develop and verify](docs/development.md) for the commands.
 
 ## The paper
 
-[`output/pdf/Cascadian_Synergetics_combined.pdf`](output/pdf/Cascadian_Synergetics_combined.pdf) is a paper about the games: what they show, the geometry behind it, how the imported code is held to its sources, the real Cascadia behind the grove, and how every claim is checked. Its source is [`docs/manuscript/`](docs/manuscript/), rendered by the [docxology/template](https://github.com/docxology/template) pipeline:
-
-```bash
-python3 scripts/build.py
-```
-
-That needs a template checkout beside this one with its project lane linked here, plus Node, TeX, Pandoc with pandoc-crossref and poppler; [`docs/manuscript/README.md`](docs/manuscript/README.md) has the setup. Every number in the paper is computed by `tools/facts.mjs` and injected as the paper renders, and the figures are drawn from the same code. Local CI does not render; it checks that the committed PDF was rendered from the current sources.
+[`output/pdf/Cascadian_Synergetics_combined.pdf`](output/pdf/Cascadian_Synergetics_combined.pdf) is a paper about the games: what they show, the geometry behind it, how the imported code is held to its sources, the real Cascadia behind the grove, and how every claim is checked. Its source is [`docs/manuscript/`](docs/manuscript/), rendered by the [docxology/template](https://github.com/docxology/template) pipeline. Follow the [pinned build guide](docs/manuscript-build.md) for the figure, hydration, PDF, and validation commands.
 
 Release 0.5.1, the paper and the source at its tag, is archived on Zenodo as [doi:10.5281/zenodo.24511763](https://doi.org/10.5281/zenodo.24511763), release 0.5.0 as [doi:10.5281/zenodo.24511112](https://doi.org/10.5281/zenodo.24511112), and release 0.4.0 as [doi:10.5281/zenodo.24508085](https://doi.org/10.5281/zenodo.24508085); [doi:10.5281/zenodo.24508082](https://doi.org/10.5281/zenodo.24508082) always resolves to the latest archived release.
-
-## Images for sharing
-
-Four 2400 by 1350 images, made the way the paper's figures are: three frames of the games taken through their test hooks, and the jitterbug's gauge drawn from the same computation the paper states.
-
-```bash
-node scripts/capture_screenshots.mjs --set social
-```
-
-```bash
-python3 scripts/make_social.py
-```
-
-Both write to `output/social/`; the first needs Chrome and a network connection, the second matplotlib (the docxology/template interpreter has it).
-
-## Editing and republishing
-
-Edit `src/` (or `lib/`), run `node tools/build.mjs`, commit, then `node tools/ci.mjs`. To update the hosted artifacts, publish `src/storybook.html` and `src/field-station.html` to their existing artifact links; the field station's source already carries the spliced code. To move the imports to newer upstream commits, follow [docs/imports.md](docs/imports.md#updating-the-imports). See [AGENTS.md](AGENTS.md) for the rules the games keep.
 
 ## Sources and credits
 
@@ -171,7 +109,7 @@ Edit `src/` (or `lib/`), run `node tools/build.mjs`, commit, then `node tools/ci
 - [QuadMath](https://github.com/docxology/QuadMath) (Apache-2.0, manuscript [doi:10.5281/zenodo.16887791](https://doi.org/10.5281/zenodo.16887791)): the exact tetravolume and Bareiss determinant, ported from `6e1f004`.
 - [Three.js](https://threejs.org/) r128 (MIT). Fonts: Fraunces, Alegreya Sans and Special Elite from Google Fonts.
 
-Notes on the geometry and on the real Cascadia behind the grove are in [docs/](docs/). Releases are listed in [CHANGELOG.md](CHANGELOG.md).
+Notes on the geometry and on the real Cascadia behind the grove are in the [documentation](docs/README.md). Releases are listed in [CHANGELOG.md](CHANGELOG.md).
 
 ![In the storybook, the stillness lattice glows around Patrol Trine at the Cathedral Ring; four marked nodes span a tetrahedron and the brass counter reads 1.](docs/images/storybook-lattice.jpg)
 

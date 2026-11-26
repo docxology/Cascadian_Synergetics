@@ -4,9 +4,14 @@ node_modules/
 __pycache__/
 *.pyc
 
-# The manuscript build writes everything under output/; only the rendered PDF and
-# the record binding it to its sources are tracked.
+# The release tracks the PDF and its source binding. Template Stage 04 reads
+# the regenerated figures and evidence from a disposable checkout.
 output/*
+!output/data/
+output/data/*
+!output/data/manuscript_claim_ledger.json
+!output/data/manuscript_variables.json
+!output/figures/
 !output/pdf/
 output/pdf/*
 !output/pdf/Cascadian_Synergetics_combined.pdf
